@@ -1,0 +1,8 @@
+algorithm,empirical_complexity
+haversine,O(n)
+bounding_box,O(n)
+velocity_validator,O(n)
+risk_scoring,O(n log n)
+balltree_build,O(n log n)
+balltree_query,O(n)
+scalability_average_latency,O(log n)

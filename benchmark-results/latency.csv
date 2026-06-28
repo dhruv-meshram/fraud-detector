@@ -1,0 +1,5 @@
+metric,p50_ms,p95_ms,p99_ms,avg_ms
+total_detector_analyze,0.013,0.0279,0.034,0.0173
+ml_inference_small_user,0.0011,0.0012,0.0019,N/A
+ml_inference_medium_user,0.0025,0.0029,0.0041,N/A
+ml_inference_large_user,0.0079,0.0085,0.0107,N/A

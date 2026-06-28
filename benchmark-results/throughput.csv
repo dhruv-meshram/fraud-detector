@@ -1,0 +1,12 @@
+scenario,throughput_eps,avg_latency_ms
+scale_users_1,23456.1,0.0386
+scale_users_10,28108.54,0.0321
+scale_users_100,27220.22,0.0332
+scale_users_1000,27280.17,0.0326
+scale_users_10000,27213.87,0.0326
+batch_100_sequential,13264.02,0.0754
+batch_100_parallel,4113.47,0.2431
+batch_1000_sequential,10403.04,0.0961
+batch_1000_parallel,3457.37,0.2892
+batch_10000_sequential,5422.82,0.1844
+batch_10000_parallel,2474.93,0.4041
