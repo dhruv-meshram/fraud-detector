@@ -95,7 +95,7 @@ class PostgresClient:
         
     def get_last_verified_login(self, user_id: str) -> Optional[Dict[str, Any]]:
         """Retrieves user's last verified login from the persistent DB."""
-        if not self.clean_logins_path.exists():
+        if not self.clean_logins_path.exists() or self.clean_logins_path.stat().st_size == 0:
             return None
             
         try:
@@ -117,7 +117,7 @@ class PostgresClient:
             
     def get_all_device_hashes(self, user_id: str) -> list:
         """Retrieves all historically registered devices for a user."""
-        if not self.clean_logins_path.exists():
+        if not self.clean_logins_path.exists() or self.clean_logins_path.stat().st_size == 0:
             return []
             
         try:
@@ -141,7 +141,7 @@ class PostgresClient:
         }])
         
         try:
-            if self.clean_logins_path.exists():
+            if self.clean_logins_path.exists() and self.clean_logins_path.stat().st_size > 0:
                 df = pd.read_csv(self.clean_logins_path)
                 df = pd.concat([df, new_row], ignore_index=True)
             else:
@@ -152,3 +152,4 @@ class PostgresClient:
         except Exception as e:
             print(f"[DB ERROR] Failed to record login: {e}")
             return False
+
