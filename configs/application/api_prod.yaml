@@ -1,0 +1,5 @@
+# FastAPI production configuration
+port: 8000
+debug: false
+workers: 4
+timeout: 30

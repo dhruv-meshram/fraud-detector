@@ -1,0 +1,4 @@
+# DBSCAN and spatial heuristics hyperparameters
+eps: 0.00039 # ~2.5 km in radians
+min_samples: 3
+max_velocity_kmh: 900.0

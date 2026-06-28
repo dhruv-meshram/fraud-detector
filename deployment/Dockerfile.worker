@@ -1,0 +1,4 @@
+# Dockerfile for the ML CUDA-enabled worker
+FROM pytorch/pytorch:1.13.1-cuda11.6-cudnn8-runtime
+WORKDIR /app
+# TODO: Add worker build instructions

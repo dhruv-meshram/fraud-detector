@@ -1,0 +1,3 @@
+version: '3.8'
+services:
+  # TODO: Configure redis, postgres, kafka, zookeeper, api, and celery worker

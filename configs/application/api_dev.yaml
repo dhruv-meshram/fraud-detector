@@ -1,0 +1,3 @@
+# FastAPI development configuration
+port: 8000
+debug: true
