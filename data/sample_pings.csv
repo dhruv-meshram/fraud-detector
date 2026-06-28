@@ -1,0 +1,6 @@
+user_id,latitude,longitude,timestamp,device_hash,location_name,description
+4db924e8-0522-462c-865d-513f56d4f1bb,19.0218,72.8726,1719540000,dev_mumbai_iphone,Mumbai Centroid 0,Baseline login from a historical known cluster (LOW_RISK).
+4db924e8-0522-462c-865d-513f56d4f1bb,19.0320,72.8101,1719543600,dev_mumbai_iphone,Mumbai Centroid 1,Subsequent normal login from another historical known cluster (LOW_RISK).
+4db924e8-0522-462c-865d-513f56d4f1bb,40.7128,-74.0060,1719544200,dev_mumbai_iphone,New York City,Flags IMPOSSIBLE_VELOCITY (HIGH_RISK) - Distance ~12500 km in 10 minutes.
+4db924e8-0522-462c-865d-513f56d4f1bb,18.5204,73.8567,1719550800,dev_unknown_macbook,Pune Outlier,Flags OUTLIER (HIGH_RISK) - 120km from Mumbai with new untrusted device.
+4db924e8-0522-462c-865d-513f56d4f1bb,19.2000,72.8500,1719558000,dev_mumbai_iphone,Mumbai Outskirts,Flags OUTLIER (MEDIUM_RISK) - 15km from Mumbai cluster centroid but trusted device.

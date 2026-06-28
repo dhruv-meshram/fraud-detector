@@ -230,6 +230,13 @@ def verify_anomaly(payload: AnomalyVerification, background_tasks: BackgroundTas
         "retrain_status": retrain_verdict
     }
 
+# --- Sample CSV Data Endpoint ---
+@app.get("/sample_pings.csv")
+def get_sample_pings():
+    """Serves the sample spatiotemporal simulation CSV file."""
+    from fastapi.responses import FileResponse
+    return FileResponse("/home/dhruv/Documents/fraud-detector/data/sample_pings.csv", media_type="text/csv", filename="sample_pings.csv")
+
 # --- Built-in Hugging Face Spaces Interactive UI ---
 @app.get("/", response_class=HTMLResponse)
 def serve_ui():
@@ -240,7 +247,7 @@ def serve_ui():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>ShieldFlow Geo-Spatial Simulation Dashboard</title>
+        <title>ShieldFlow Spatiotemporal Simulation Dashboard</title>
         <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
         <!-- Leaflet Map CSS -->
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -273,16 +280,17 @@ def serve_ui():
                 overflow-x: hidden;
             }
             header {
-                padding: 1.5rem 3rem;
+                padding: 1.2rem 2.5rem;
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
                 border-bottom: 1px solid var(--border-color);
                 backdrop-filter: blur(12px);
                 background: rgba(8, 12, 20, 0.5);
+                z-index: 10;
             }
             header h1 {
-                font-size: 1.6rem;
+                font-size: 1.5rem;
                 font-weight: 800;
                 background: linear-gradient(to right, #60a5fa, #ef4444);
                 -webkit-background-clip: text;
@@ -315,54 +323,68 @@ def serve_ui():
             }
             main {
                 flex: 1;
-                max-width: 1600px;
+                max-width: 1700px;
                 width: 100%;
                 margin: 0 auto;
-                padding: 2rem 3rem;
+                padding: 1.5rem 2.5rem;
                 display: grid;
-                grid-template-columns: 450px 1fr;
-                gap: 2rem;
+                grid-template-columns: 460px 1fr;
+                gap: 1.5rem;
             }
             .panel {
                 display: flex;
                 flex-direction: column;
-                gap: 2rem;
+                gap: 1.5rem;
+                max-height: calc(100vh - 120px);
+                overflow-y: auto;
+                padding-right: 0.2rem;
+            }
+            /* Custom Scrollbar for panel */
+            .panel::-webkit-scrollbar {
+                width: 6px;
+            }
+            .panel::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            .panel::-webkit-scrollbar-thumb {
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 3px;
             }
             .card {
                 background: var(--card-bg);
                 border: 1px solid var(--border-color);
                 border-radius: 16px;
-                padding: 2rem;
+                padding: 1.5rem;
                 backdrop-filter: blur(16px);
                 box-shadow: 0 10px 35px rgba(0, 0, 0, 0.3);
             }
             h2 {
-                font-size: 1.25rem;
-                margin-bottom: 1.2rem;
+                font-size: 1.15rem;
+                margin-bottom: 1rem;
                 font-weight: 600;
                 display: flex;
                 align-items: center;
                 gap: 0.5rem;
             }
             .form-group {
-                margin-bottom: 1.2rem;
+                margin-bottom: 1rem;
             }
             label {
                 display: block;
-                font-size: 0.85rem;
+                font-size: 0.8rem;
                 color: var(--text-muted);
-                margin-bottom: 0.4rem;
+                margin-bottom: 0.3rem;
                 font-weight: 500;
             }
             input {
                 width: 100%;
-                padding: 0.8rem 1rem;
+                padding: 0.7rem 0.9rem;
                 background: rgba(255, 255, 255, 0.03);
                 border: 1px solid var(--border-color);
                 border-radius: 8px;
                 color: var(--text-main);
                 font-family: inherit;
-                font-size: 0.95rem;
+                font-size: 0.9rem;
                 transition: all 0.2s ease;
             }
             input:focus {
@@ -373,6 +395,9 @@ def serve_ui():
             .btn-primary {
                 background: var(--accent-blue);
                 color: white;
+                border: none;
+                cursor: pointer;
+                transition: all 0.2s ease;
             }
             .btn-primary:hover {
                 background: #2563eb;
@@ -383,10 +408,10 @@ def serve_ui():
                 background: linear-gradient(135deg, var(--accent-blue), #4f46e5);
                 color: white;
                 font-weight: 700;
-                font-size: 1rem;
+                font-size: 0.95rem;
                 border: none;
                 width: 100%;
-                padding: 1.1rem;
+                padding: 0.9rem;
                 border-radius: 10px;
                 cursor: pointer;
                 transition: all 0.2s ease;
@@ -400,11 +425,18 @@ def serve_ui():
                 filter: brightness(1.1);
                 transform: translateY(-1px);
             }
+            .btn-simulator:disabled {
+                background: #1f2937;
+                color: #4b5563;
+                cursor: not-allowed;
+                box-shadow: none;
+                filter: none;
+            }
             .preset-grid {
                 display: grid;
                 grid-template-columns: repeat(2, 1fr);
-                gap: 0.6rem;
-                margin-bottom: 1.2rem;
+                gap: 0.5rem;
+                margin-bottom: 1rem;
             }
             .preset-btn {
                 padding: 0.5rem;
@@ -416,6 +448,10 @@ def serve_ui():
                 cursor: pointer;
                 transition: all 0.2s;
                 text-align: center;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.3rem;
             }
             .preset-btn:hover {
                 background: rgba(255, 255, 255, 0.06);
@@ -423,7 +459,7 @@ def serve_ui():
             }
             #map {
                 width: 100%;
-                height: 550px;
+                height: 520px;
                 border-radius: 12px;
                 border: 1px solid var(--border-color);
                 z-index: 1;
@@ -431,14 +467,14 @@ def serve_ui():
             .map-container {
                 display: flex;
                 flex-direction: column;
-                gap: 1.5rem;
+                gap: 1.2rem;
             }
             .console-card {
                 background: #04060b;
                 border: 1px solid var(--border-color);
                 border-radius: 12px;
-                padding: 1.2rem;
-                height: 180px;
+                padding: 1rem;
+                height: 220px;
                 display: flex;
                 flex-direction: column;
             }
@@ -456,10 +492,10 @@ def serve_ui():
                 font-family: 'JetBrains Mono', monospace;
                 font-size: 0.8rem;
                 overflow-y: auto;
-                padding-top: 0.8rem;
+                padding-top: 0.6rem;
                 display: flex;
                 flex-direction: column;
-                gap: 0.4rem;
+                gap: 0.35rem;
             }
             .log-item {
                 line-height: 1.4;
@@ -470,16 +506,12 @@ def serve_ui():
             .log-warning { color: var(--accent-yellow); }
             .log-error { color: var(--accent-red); }
             
-            button {
-                cursor: pointer;
-                font-family: inherit;
-            }
             .verdict-box {
-                font-size: 1.8rem;
+                font-size: 1.6rem;
                 font-weight: 800;
-                padding: 1rem;
+                padding: 0.8rem;
                 border-radius: 8px;
-                margin-top: 1rem;
+                margin-top: 0.8rem;
                 text-align: center;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
@@ -512,32 +544,102 @@ def serve_ui():
                 color: var(--text-main) !important;
                 border: 1px solid var(--border-color);
                 font-family: 'Outfit', sans-serif;
+                font-size: 0.85rem;
+            }
+            .slider-container {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                margin-bottom: 1rem;
+            }
+            .slider-container input[type="range"] {
+                flex: 1;
+                cursor: pointer;
+            }
+            .slider-value {
+                font-family: 'JetBrains Mono', monospace;
+                font-size: 0.85rem;
+                min-width: 45px;
+                text-align: right;
+            }
+            .csv-status-card {
+                background: rgba(255, 255, 255, 0.02);
+                border: 1px dashed var(--border-color);
+                border-radius: 8px;
+                padding: 0.8rem;
+                margin-bottom: 1rem;
+                display: flex;
+                flex-direction: column;
+                gap: 0.3rem;
+            }
+            .csv-status-title {
+                font-size: 0.8rem;
+                font-weight: 600;
+            }
+            .csv-status-detail {
+                font-size: 0.75rem;
+                color: var(--text-muted);
+                line-height: 1.3;
             }
         </style>
     </head>
     <body>
         <header>
-            <h1>ShieldFlow Geo-Spatial Simulation</h1>
+            <h1>ShieldFlow Spatiotemporal Simulation</h1>
             <div class="status-badge">
                 <div class="status-pulse"></div>
-                SIMULATION GATEWAY READY
+                GATEWAY RUNNING
             </div>
         </header>
         
         <main>
             <div class="panel">
+                <!-- CSV Simulation Control -->
                 <div class="card">
-                    <h2>🎯 Simulation Control Panel</h2>
-                    <div style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.85rem; line-height: 1.4;">
-                        Simulate a live chronological flow of logins spanning multiple coordinates. Watch the system evaluate velocity speeds and flag impossible travel vectors instantly.
+                    <h2>📁 CSV Spatiotemporal Simulation</h2>
+                    <div style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.8rem; line-height: 1.4;">
+                        Upload a CSV containing location logs or load our preconfigured multi-factor scenario (impossible speed, spatial clustering outliers, device mismatches).
                     </div>
                     
-                    <button class="btn-simulator" onclick="startGlobalSimulation()">
-                        🚀 Run Global Simulation
+                    <div class="preset-grid">
+                        <button class="preset-btn" onclick="loadSampleCsv()">
+                            📥 Load Sample CSV
+                        </button>
+                        <button class="preset-btn" onclick="triggerFileInput()">
+                            📁 Upload Custom CSV
+                        </button>
+                        <input type="file" id="csvFileInput" accept=".csv" style="display:none;" onchange="handleCsvUpload(event)">
+                    </div>
+                    
+                    <div class="csv-status-card" id="csvStatusCard">
+                        <div class="csv-status-title" id="csvStatusTitle">No CSV loaded</div>
+                        <div class="csv-status-detail" id="csvStatusDetail">Ready to simulate. Load the sample dataset or select your own formatted CSV.</div>
+                    </div>
+                    
+                    <div class="slider-container">
+                        <label for="speedSlider" style="margin-bottom:0;">Sim Speed:</label>
+                        <input type="range" id="speedSlider" min="0.5" max="5.0" step="0.5" value="2.0">
+                        <span class="slider-value" id="speedValue">2.0s</span>
+                    </div>
+                    
+                    <button class="btn-simulator" id="runCsvSimBtn" onclick="runCsvSimulation()" disabled>
+                        🚀 Run CSV Simulation
                     </button>
-                    
-                    <div style="margin: 1.5rem 0; border-top: 1px solid var(--border-color);"></div>
-                    
+                </div>
+                
+                <!-- Legacy Demo Simulation Control -->
+                <div class="card">
+                    <h2>🎯 Global Default Simulator</h2>
+                    <div style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.8rem; line-height: 1.4;">
+                        Runs a hardcoded multi-continent login path (SF -> Oakland -> LA -> London -> Paris) to verify core spatiotemporal algorithms.
+                    </div>
+                    <button class="preset-btn" style="width:100%; padding: 0.8rem; font-weight: 600; border-color: var(--accent-blue); color: var(--text-main);" onclick="startGlobalSimulation()">
+                        Run Global Route Demo
+                    </button>
+                </div>
+                
+                <!-- Manual Live Evaluation -->
+                <div class="card">
                     <h2>⚡ Live Evaluation Checker</h2>
                     <div class="preset-grid">
                         <button class="preset-btn" onclick="loadPreset('sf')">SF (Home)</button>
@@ -548,21 +650,21 @@ def serve_ui():
                     
                     <div class="form-group">
                         <label for="userId">User ID</label>
-                        <input type="text" id="userId" value="sim_demo_user">
+                        <input type="text" id="userId" value="4db924e8-0522-462c-865d-513f56d4f1bb">
                     </div>
                     <div class="form-group">
                         <label for="latitude">Latitude</label>
-                        <input type="number" step="0.0001" id="latitude" value="37.7749">
+                        <input type="number" step="0.0001" id="latitude" value="19.0218">
                     </div>
                     <div class="form-group">
                         <label for="longitude">Longitude</label>
-                        <input type="number" step="0.0001" id="longitude" value="-122.4194">
+                        <input type="number" step="0.0001" id="longitude" value="72.8726">
                     </div>
                     <div class="form-group">
                         <label for="deviceHash">Device Hash</label>
-                        <input type="text" id="deviceHash" value="dev_iphone_sf">
+                        <input type="text" id="deviceHash" value="dev_mumbai_iphone">
                     </div>
-                    <button class="btn-primary" style="width:100%; padding: 0.9rem; border-radius:8px; border:none; font-weight:600;" onclick="submitManualCheck()">
+                    <button class="btn-primary" style="width:100%; padding: 0.8rem; border-radius:8px; border:none; font-weight:600;" onclick="submitManualCheck()">
                         Evaluate Single Login
                     </button>
                     
@@ -573,17 +675,17 @@ def serve_ui():
             </div>
             
             <div class="map-container">
-                <div class="card" style="padding: 1.5rem; flex: 1;">
+                <div class="card" style="padding: 1rem; flex: 1;">
                     <div id="map"></div>
                 </div>
                 
                 <div class="console-card">
                     <div class="console-header">
-                        <span>🛰️ ANOMALY STREAM CONSOLE LOGS</span>
-                        <span>p99 SLA: &lt;50ms</span>
+                        <span>🛰️ SHIELDFLOW REAL-TIME TELEMETRY LOGS</span>
+                        <span>SLA Target: &lt;50ms</span>
                     </div>
                     <div class="console-logs" id="consoleLogs">
-                        <div class="log-item"><span class="log-time">[SYSTEM]</span> <span class="log-info">Console initialized. Awaiting simulation trigger...</span></div>
+                        <div class="log-item"><span class="log-time">[SYSTEM]</span> <span class="log-info">Dashboard initialized. Select simulation flow to begin.</span></div>
                     </div>
                 </div>
             </div>
@@ -605,6 +707,16 @@ def serve_ui():
             let markerGroup = L.layerGroup().addTo(map);
             let polylineGroup = L.layerGroup().addTo(map);
             
+            // Speed Slider update
+            const speedSlider = document.getElementById('speedSlider');
+            const speedValue = document.getElementById('speedValue');
+            speedSlider.oninput = function() {
+                speedValue.textContent = this.value + 's';
+            }
+
+            // Holds parsed CSV rows
+            let loadedPings = [];
+
             // Custom Icons for Risk Verdicts
             function createCircleMarker(lat, lon, verdict) {
                 let color = '#3b82f6'; // blue (default)
@@ -623,10 +735,10 @@ def serve_ui():
             }
 
             const USER_PRESETS = {
-                sf: { lat: 37.7749, lon: -122.4194, device: "dev_iphone_sf", label: "San Francisco" },
-                la_normal: { lat: 34.0522, lon: -118.2437, device: "dev_iphone_sf", label: "Los Angeles" },
-                london_fast: { lat: 51.5074, lon: -0.1278, device: "dev_iphone_sf", label: "London" },
-                paris_mfa: { lat: 48.8566, lon: 2.3522, device: "dev_paris_session", label: "Paris" }
+                sf: { lat: 19.0218, lon: 72.8726, device: "dev_mumbai_iphone", label: "Mumbai (Known)" },
+                la_normal: { lat: 19.0320, lon: 72.8101, device: "dev_mumbai_iphone", label: "Mumbai Outskirts" },
+                london_fast: { lat: 40.7128, lon: -74.0060, device: "dev_mumbai_iphone", label: "New York (Impossible)" },
+                paris_mfa: { lat: 18.5204, lon: 73.8567, device: "dev_unknown_macbook", label: "Pune (Outlier)" }
             };
 
             function loadPreset(key) {
@@ -635,7 +747,7 @@ def serve_ui():
                     document.getElementById('latitude').value = p.lat;
                     document.getElementById('longitude').value = p.lon;
                     document.getElementById('deviceHash').value = p.device;
-                    addLog(`Loaded preset for ${p.label}`, "info");
+                    addLog(`Loaded preset parameters for ${p.label}`, "info");
                 }
             }
 
@@ -651,6 +763,216 @@ def serve_ui():
                 
                 logs.innerHTML += `<div class="log-item"><span class="log-time">[${timeStr}]</span> <span class="${typeClass}">${text}</span></div>`;
                 logs.scrollTop = logs.scrollHeight;
+            }
+
+            function triggerFileInput() {
+                document.getElementById('csvFileInput').click();
+            }
+
+            // CSV Parsing Logic
+            function parseCSV(text) {
+                const lines = text.split(/\\r?\\n/);
+                const result = [];
+                if (lines.length < 2) return result;
+                
+                const headers = lines[0].split(',').map(h => h.trim());
+                
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
+                    
+                    // Simple split respecting basic comma spacing
+                    const values = line.split(',').map(v => v.trim());
+                    const obj = {};
+                    headers.forEach((header, idx) => {
+                        obj[header] = values[idx] || "";
+                    });
+                    result.push(obj);
+                }
+                return result;
+            }
+
+            async function loadSampleCsv() {
+                addLog("Fetching sample spatiotemporal CSV...", "info");
+                try {
+                    const response = await fetch('/sample_pings.csv');
+                    const text = await response.text();
+                    loadedPings = parseCSV(text);
+                    
+                    if (loadedPings.length > 0) {
+                        document.getElementById('csvStatusTitle').textContent = "sample_pings.csv loaded";
+                        document.getElementById('csvStatusDetail').textContent = `Parsed ${loadedPings.length} spatiotemporal login events correctly. Ready to run simulation.`;
+                        document.getElementById('runCsvSimBtn').disabled = false;
+                        addLog(`Loaded sample CSV with ${loadedPings.length} events. Ready to run simulation.`, "success");
+                    } else {
+                        throw new Error("Empty CSV output");
+                    }
+                } catch (err) {
+                    addLog(`Failed to fetch sample CSV: ${err.message}`, "error");
+                }
+            }
+
+            function handleCsvUpload(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const text = e.target.result;
+                    loadedPings = parseCSV(text);
+                    
+                    if (loadedPings.length > 0) {
+                        document.getElementById('csvStatusTitle').textContent = file.name;
+                        document.getElementById('csvStatusDetail').textContent = `Parsed ${loadedPings.length} custom login events. Ready to run simulation.`;
+                        document.getElementById('runCsvSimBtn').disabled = false;
+                        addLog(`Successfully parsed custom CSV "${file.name}" with ${loadedPings.length} login pings.`, "success");
+                    } else {
+                        addLog("Error: CSV file contains invalid structure or has no data rows.", "error");
+                    }
+                };
+                reader.readAsText(file);
+            }
+
+            async function runCsvSimulation() {
+                if (loadedPings.length === 0) return;
+                
+                // Clear map layers
+                markerGroup.clearLayers();
+                polylineGroup.clearLayers();
+                
+                addLog(`▶️ Starting CSV Spatiotemporal Simulation (${loadedPings.length} pings)...`, "info");
+                
+                // Disable controls
+                document.getElementById('runCsvSimBtn').disabled = true;
+                const delayMs = parseFloat(speedSlider.value) * 1000;
+                
+                let coordinatesPath = [];
+                
+                for (let i = 0; i < loadedPings.length; i++) {
+                    const ping = loadedPings[i];
+                    const locName = ping.location_name || `Coordinate #${i+1}`;
+                    const desc = ping.description || "";
+                    
+                    addLog(`Ping ${i+1}/${loadedPings.length}: Evaluating ${locName}...`, "info");
+                    
+                    try {
+                        const response = await fetch('/evaluate_risk', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                user_id: ping.user_id,
+                                latitude: parseFloat(ping.latitude),
+                                longitude: parseFloat(ping.longitude),
+                                timestamp: parseFloat(ping.timestamp),
+                                device_hash: ping.device_hash
+                            })
+                        });
+                        
+                        const data = await response.json();
+                        
+                        // Map marker rendering
+                        const marker = createCircleMarker(parseFloat(ping.latitude), parseFloat(ping.longitude), data.verdict);
+                        marker.addTo(markerGroup);
+                        
+                        let popupText = `<b>Ping ${i+1}: ${locName}</b><br>
+                                         <b>Verdict:</b> ${data.verdict}<br>
+                                         <b>Status:</b> ${data.status}<br>`;
+                        if (data.details.velocity_kmh) {
+                            popupText += `<b>Velocity:</b> ${data.details.velocity_kmh.toFixed(1)} km/h<br>`;
+                        }
+                        if (data.details.distance_km) {
+                            popupText += `<b>Distance:</b> ${data.details.distance_km.toFixed(1)} km<br>`;
+                        }
+                        popupText += `<i>${data.reason}</i>`;
+                        marker.bindPopup(popupText);
+                        
+                        let logType = "success";
+                        if (data.verdict === 'MEDIUM_RISK') logType = "warning";
+                        if (data.verdict === 'HIGH_RISK') logType = "error";
+                        
+                        // Detailed spatiotemporal logs based on validation status
+                        if (data.status === 'IMPOSSIBLE_VELOCITY') {
+                            addLog(`🔴 [IMPOSSIBLE_TRAVEL] User ${ping.user_id} flagged at ${locName}! Speed: ${data.details.velocity_kmh.toFixed(1)} km/h. Verdict: HIGH_RISK.`, "error");
+                        } else if (data.status === 'OUTLIER') {
+                            const badge = data.verdict === 'HIGH_RISK' ? '🔴' : '🟡';
+                            addLog(`${badge} [SPATIAL_OUTLIER] User ${ping.user_id} evaluated at ${locName}. Dist: ${data.details.distance_km}km, Device Match: ${!data.details.device_mismatch}. Risk Score: ${data.score}. Verdict: ${data.verdict}.`, logType);
+                        } else if (data.status === 'KNOWN_ZONE') {
+                            addLog(`🟢 [KNOWN_ZONE] User ${ping.user_id} authenticated at ${locName}. Centroid Distance: ${data.details.distance_km || 0}km. Verdict: LOW_RISK.`, "success");
+                        } else {
+                            addLog(`🟢 [COLD_START] User ${ping.user_id} bypass check at ${locName}. Reason: ${data.reason}`, "success");
+                        }
+                        
+                        // MFA Simulation block
+                        if (data.verdict === 'MEDIUM_RISK' || data.verdict === 'HIGH_RISK') {
+                            addLog(`⚠️ [MFA_CHALLENGE] Anomaly detected. Sending verification payload...`, "warning");
+                            
+                            const verifyResponse = await fetch('/verify_anomaly', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    user_id: ping.user_id,
+                                    latitude: parseFloat(ping.latitude),
+                                    longitude: parseFloat(ping.longitude),
+                                    timestamp: parseFloat(ping.timestamp),
+                                    device_hash: ping.device_hash,
+                                    is_verified: true
+                                })
+                            });
+                            const verifyData = await verifyResponse.json();
+                            addLog(`✅ [MFA_SOLVED] MFA challenge passed. Base profile retraining status: ${verifyData.retrain_status.action || 'OK'}`, "success");
+                        } else {
+                            // Record standard log
+                            await fetch('/verify_anomaly', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    user_id: ping.user_id,
+                                    latitude: parseFloat(ping.latitude),
+                                    longitude: parseFloat(ping.longitude),
+                                    timestamp: parseFloat(ping.timestamp),
+                                    device_hash: ping.device_hash,
+                                    is_verified: true
+                                })
+                            });
+                        }
+                        
+                        // Draw paths
+                        coordinatesPath.push([parseFloat(ping.latitude), parseFloat(ping.longitude)]);
+                        if (coordinatesPath.length > 1) {
+                            let lineColor = '#3b82f6';
+                            let dashArray = null;
+                            if (data.verdict === 'HIGH_RISK') {
+                                lineColor = '#ef4444';
+                                dashArray = '8, 8';
+                            } else if (data.verdict === 'MEDIUM_RISK') {
+                                lineColor = '#f59e0b';
+                            }
+                            
+                            L.polyline(coordinatesPath.slice(-2), {
+                                color: lineColor,
+                                weight: 3,
+                                opacity: 0.7,
+                                dashArray: dashArray
+                            }).addTo(polylineGroup);
+                        }
+                        
+                        // Pan to newest node and focus
+                        map.panTo([parseFloat(ping.latitude), parseFloat(ping.longitude)]);
+                        marker.openPopup();
+                        
+                    } catch (err) {
+                        addLog(`Simulation Error at ping ${i+1}: ${err.message}`, "error");
+                    }
+                    
+                    await new Promise(resolve => setTimeout(resolve, delayMs));
+                }
+                
+                // Final Fit Map
+                if (coordinatesPath.length > 0) {
+                    map.fitBounds(L.polyline(coordinatesPath).getBounds(), { padding: [50, 50] });
+                }
+                addLog(`🏁 CSV Simulation completed. Visualized ${loadedPings.length} sequential pings.`, "success");
+                document.getElementById('runCsvSimBtn').disabled = false;
             }
 
             async function submitManualCheck() {
@@ -693,48 +1015,44 @@ def serve_ui():
                         logType = "error";
                     }
                     
-                    addLog(`Verdict: ${data.verdict} | Status: ${data.status} | Reason: ${data.reason}`, logType);
+                    addLog(`Manual Check: ${data.verdict} | Status: ${data.status} | Reason: ${data.reason}`, logType);
                     
                     // Mark on map
                     markerGroup.clearLayers();
                     const marker = createCircleMarker(lat, lon, data.verdict);
                     marker.addTo(markerGroup);
                     marker.bindPopup(`<b>User:</b> ${userId}<br><b>Verdict:</b> ${data.verdict}<br><b>Reason:</b> ${data.reason}`).openPopup();
-                    map.setView([lat, lon], 6);
+                    map.setView([lat, lon], 8);
                     
                 } catch (err) {
-                    addLog(`API request failed: ${err}`, "error");
+                    addLog(`API request failed: ${err.message}`, "error");
                 }
             }
             
-            // --- Simulation Flow Engine ---
+            // Legacy simulation
             async function startGlobalSimulation() {
-                // Clear previous simulation traces
                 markerGroup.clearLayers();
                 polylineGroup.clearLayers();
                 
                 const simUser = "sim_user_" + Math.floor(Math.random() * 100000);
-                addLog(`▶️ Started Global Traffic Simulation for user: ${simUser}`, "info");
+                addLog(`▶️ Started Global Route Demo for user: ${simUser}`, "info");
                 
-                // Define sequential simulation logins
-                // Demonstrates: Cold start -> Local travel (Low Risk) -> Flight travel (Low Risk after delay) -> Impossible flight (High Risk) -> MFA Override
                 const pings = [
                     { lat: 37.7749, lon: -122.4194, delayHours: 0, device: "iphone_sf", location: "San Francisco Home" },
                     { lat: 37.8044, lon: -122.2711, delayHours: 2, device: "iphone_sf", location: "Oakland Cafe" },
                     { lat: 34.0522, lon: -118.2437, delayHours: 8, device: "iphone_sf", location: "Los Angeles Office" },
                     { lat: 51.5074, lon: -0.1278, delayHours: 1, device: "iphone_sf", location: "London Airport (Impossible Travel)" },
-                    { lat: 48.8566, lon: 2.3522, delayHours: 48, device: "macbook_paris", location: "Paris Hotel (MFA Required)" }
+                    { lat: 48.8566, lon: 2.3522, delayHours: 48, device: "macbook_paris", location: "Paris Hotel" }
                 ];
                 
                 let baseTimestamp = 1600000000.0;
                 let coordinatesPath = [];
-                let previousVerdict = null;
                 
                 for (let i = 0; i < pings.length; i++) {
                     const ping = pings[i];
                     baseTimestamp += (ping.delayHours * 3600.0);
                     
-                    addLog(`Evaluating Ping ${i+1}/${pings.length} at ${ping.location}...`, "info");
+                    addLog(`Evaluating Demo Ping ${i+1}/${pings.length} at ${ping.location}...`, "info");
                     
                     try {
                         const response = await fetch('/evaluate_risk', {
@@ -750,33 +1068,26 @@ def serve_ui():
                         });
                         
                         const data = await response.json();
-                        
-                        // Map marker rendering
                         const marker = createCircleMarker(ping.lat, ping.lon, data.verdict);
                         marker.addTo(markerGroup);
                         
                         let popupText = `<b>Ping ${i+1}: ${ping.location}</b><br>
                                          <b>Verdict:</b> ${data.verdict}<br>
                                          <b>Status:</b> ${data.status}<br>`;
-                                         
                         if (data.details.velocity_kmh) {
                             popupText += `<b>Velocity:</b> ${data.details.velocity_kmh.toFixed(1)} km/h<br>`;
                         }
                         popupText += `<i>${data.reason}</i>`;
-                        
                         marker.bindPopup(popupText);
                         
                         let logType = "success";
                         if (data.verdict === 'MEDIUM_RISK') logType = "warning";
                         if (data.verdict === 'HIGH_RISK') logType = "error";
                         
-                        addLog(`Ping ${i+1}: ${data.verdict} (${data.status}) | Speed: ${data.details.velocity_kmh || 0} km/h | ${data.reason}`, logType);
+                        addLog(`Demo Ping ${i+1}: ${data.verdict} (${data.status}) | Speed: ${data.details.velocity_kmh || 0} km/h | ${data.reason}`, logType);
                         
-                        // If it requires verification (Medium/High Risk), simulate MFA Solve
                         if (data.verdict === 'MEDIUM_RISK' || data.verdict === 'HIGH_RISK') {
-                            addLog(`⚠️ Anomaly detected. Simulating MFA challenge outcome...`, "warning");
-                            
-                            // Simulate MFA Verification endpoint update
+                            addLog(`⚠️ Anomaly detected. Simulating MFA challenge solve...`, "warning");
                             const verifyResponse = await fetch('/verify_anomaly', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
@@ -790,9 +1101,8 @@ def serve_ui():
                                 })
                             });
                             const verifyData = await verifyResponse.json();
-                            addLog(`✅ MFA SUCCESS challenge completed. Profile retraining: ${JSON.stringify(verifyData.retrain_status.action)}`, "success");
+                            addLog(`✅ MFA challenge success. Profile retraining: ${JSON.stringify(verifyData.retrain_status.action)}`, "success");
                         } else {
-                            // Otherwise, record standard low risk verified login
                             await fetch('/verify_anomaly', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
@@ -807,17 +1117,14 @@ def serve_ui():
                             });
                         }
                         
-                        // Draw flight path line
                         coordinatesPath.push([ping.lat, ping.lon]);
                         if (coordinatesPath.length > 1) {
-                            let lineColor = '#3b82f6'; // normal blue
+                            let lineColor = '#3b82f6';
                             let dashArray = null;
-                            
                             if (data.verdict === 'HIGH_RISK') {
-                                lineColor = '#ef4444'; // red for impossible speed
+                                lineColor = '#ef4444';
                                 dashArray = '8, 8';
                             }
-                            
                             L.polyline(coordinatesPath.slice(-2), {
                                 color: lineColor,
                                 weight: 3,
@@ -826,26 +1133,24 @@ def serve_ui():
                             }).addTo(polylineGroup);
                         }
                         
-                        // Pan to newest node and open popup
                         map.panTo([ping.lat, ping.lon]);
                         marker.openPopup();
                         
                     } catch (err) {
-                        addLog(`Simulation Error at ping ${i+1}: ${err}`, "error");
+                        addLog(`Demo Simulation Error: ${err.message}`, "error");
                     }
                     
-                    // Delay next step by 2.0 seconds for visual tracking
                     await new Promise(resolve => setTimeout(resolve, 2000));
                 }
                 
-                // Final Fit Bounds
                 if (coordinatesPath.length > 0) {
                     map.fitBounds(L.polyline(coordinatesPath).getBounds(), { padding: [50, 50] });
                 }
-                addLog(`🏁 Simulation completed. Visualized ${pings.length} sequential pings.`, "success");
+                addLog(`🏁 Demo route simulation complete.`, "success");
             }
         </script>
     </body>
     </html>
     """
     return HTMLResponse(content=html_content, status_code=200)
+
