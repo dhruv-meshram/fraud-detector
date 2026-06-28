@@ -143,10 +143,25 @@ result = detector.analyze({
 
 ---
 
-## 🧪 Running the Test Suite
+## 🧪 Verification & Testing
 
-Verify that all 20 tests are passing:
+ShieldFlow contains two test suites:
 
+### 1. Internal Package Test Suite
+Validates internal module changes:
 ```bash
 venv/bin/pytest
 ```
+
+### 2. External Library Validation Suite
+Runs black-box validation of the package as an external consumer:
+```bash
+venv/bin/python lib-tests/run_all.py
+```
+This validation generates test summaries and performance metrics in the `lib-tests/reports/` folder.
+
+---
+
+## 📖 Complete Documentation
+For full setup instructions, model schemas, background ML pipeline details, and web server configurations, refer to the [documentation.md](documentation.md) file in the root of this project.
+
