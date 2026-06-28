@@ -10,27 +10,29 @@ from pydantic import BaseModel, Field
 from datetime import datetime, timezone
 import math
 
-from ml.features.geo_features import spatiotemporal_velocity
-from ml.models.registry import ModelRegistry
-from ml.models.inference_ops import evaluate_login_location
 from ml.training.retrain import check_and_trigger_retrain
-from algorithms.graph.velocity_validator import validate_velocity
-from algorithms.ranking.multi_factor_score import calculate_risk_score
-from algorithms.spatial.haversine import haversine_distance
 
-from app.services import RedisClient, KafkaProducer, PostgresClient
+from prj import FraudDetector
+from prj.adapters import PostgreSQLProfileStore, RedisCacheStore, PostgresDBStore, KafkaAlertProducer
+
+# Instantiate detector with production-grade storage adapters
+profile_store = PostgreSQLProfileStore()
+cache_store = RedisCacheStore()
+db_store = PostgresDBStore()
+alert_producer = KafkaAlertProducer()
+
+detector = FraudDetector(
+    profile_store=profile_store,
+    cache_store=cache_store,
+    db_store=db_store,
+    alert_producer=alert_producer
+)
 
 app = FastAPI(
     title="ShieldFlow Risk Evaluation Gateway",
     description="Deterministic Graph + Spatial DBSCAN Risk Evaluator API",
     version="1.0.0"
 )
-
-# Initialize service layer clients
-redis_client = RedisClient()
-kafka_producer = KafkaProducer()
-db_client = PostgresClient()
-registry = ModelRegistry()
 
 # --- Pydantic Data Models ---
 class LoginEvent(BaseModel):
@@ -56,143 +58,44 @@ def health_check():
 @app.post("/evaluate_risk")
 def evaluate_risk(event: LoginEvent):
     """Evaluates the risk level of an incoming login event using Graph + ML."""
-    user_id = event.user_id
-    lat = event.latitude
-    lon = event.longitude
-    ts = event.timestamp
-    device = event.device_hash
+    res = detector.analyze({
+        "user_id": event.user_id,
+        "latitude": event.latitude,
+        "longitude": event.longitude,
+        "timestamp": event.timestamp,
+        "device_hash": event.device_hash
+    })
     
-    # 1. Fetch last verified login node (from Redis cache or Postgres)
-    last_node = redis_client.get_last_node(user_id)
-    velocity_kmh = 0.0
-    
-    # 2. Graph Validator: Spatiotemporal Velocity Check
-    if last_node:
-        # Check velocity
-        velocity_kmh = spatiotemporal_velocity(
-            last_node["latitude"], last_node["longitude"], last_node["timestamp"],
-            lat, lon, ts
-        )
-        is_possible = validate_velocity(last_node, {"latitude": lat, "longitude": lon, "timestamp": ts})
-        
-        if not is_possible:
-            verdict = "HIGH_RISK"
-            status = "IMPOSSIBLE_VELOCITY"
-            score = 1.0
-            reason = f"Impossible velocity of {velocity_kmh:.2f} km/h detected relative to last login."
-            
-            # Emit Kafka Alert immediately
-            kafka_producer.emit_event(
-                topic="shieldflow.anomalies",
-                key=user_id,
-                value={"user_id": user_id, "reason": reason, "velocity_kmh": velocity_kmh, "verdict": verdict}
-            )
-            return {
-                "verdict": verdict,
-                "status": status,
-                "score": score,
-                "reason": reason,
-                "details": {"velocity_kmh": round(velocity_kmh, 2), "distance_km": None}
-            }
-            
-    # 3. Model Registry Lookup: Spatial Profile Checks
-    profile = registry.get_profile(user_id)
-    
-    # 3a. Cold Start Fallback
-    if not profile:
-        verdict = "LOW_RISK"
-        status = "COLD_START_BYPASS"
-        score = 0.0
-        reason = "User is in Cold Start state (< 10 logins). Passed velocity checks."
-        
-        # In cold start, if it is low risk, we auto-verify to build baseline
-        db_client.record_login(user_id, lat, lon, ts, device, is_verified=True)
-        redis_client.set_last_node(user_id, {"latitude": lat, "longitude": lon, "timestamp": ts, "device_hash": device})
-        
-        return {
-            "verdict": verdict,
-            "status": status,
-            "score": score,
-            "reason": reason,
-            "details": {"velocity_kmh": round(velocity_kmh, 2), "distance_km": None}
-        }
-        
-    # 3b. ML Inference boundary check
-    evaluation = evaluate_login_location(user_id, lat, lon)
-    
-    if evaluation["status"] == "KNOWN_ZONE":
-        verdict = "LOW_RISK"
-        status = "KNOWN_ZONE"
-        score = 0.0
-        reason = f"Login matches spatial cluster {evaluation['cluster_idx']}."
-        
-        # Save low risk as verified login
-        db_client.record_login(user_id, lat, lon, ts, device, is_verified=True)
-        redis_client.set_last_node(user_id, {"latitude": lat, "longitude": lon, "timestamp": ts, "device_hash": device})
-        
-        return {
-            "verdict": verdict,
-            "status": status,
-            "score": score,
-            "reason": reason,
-            "details": {
-                "velocity_kmh": round(velocity_kmh, 2),
-                "distance_km": round(evaluation["distance_km"], 2) if "distance_km" in evaluation else 0.0
-            }
-        }
-        
-    # 3c. Spatial Outlier: Fallback to Multi-Factor Scoring
-    # Determine distance from closest centroid
-    clusters = profile.get("clusters", [])
-    closest_dist = 99999.0
-    for cluster in clusters:
-        dist = haversine_distance(lat, lon, cluster["centroid_lat"], cluster["centroid_lon"])
-        if dist < closest_dist:
-            closest_dist = dist
-            
-    # Check device mismatch
-    historic_devices = db_client.get_all_device_hashes(user_id)
-    device_mismatch = device not in historic_devices if historic_devices else True
-    
-    # Calculate Multi-Factor score
-    mfa_score = calculate_risk_score(velocity_kmh, closest_dist, device_mismatch)
-    
-    # Verdict threshold check
-    if mfa_score >= 0.70:
+    # Map back to legacy schema representation
+    if res.status == "IMPOSSIBLE_VELOCITY":
         verdict = "HIGH_RISK"
-        reason = f"Spatial outlier with high multi-factor risk score of {mfa_score:.2f}."
+    elif res.status == "OUTLIER":
+        verdict = "HIGH_RISK" if res.risk_score >= 70.0 else "MEDIUM_RISK"
     else:
-        verdict = "MEDIUM_RISK"
-        reason = f"Spatial outlier with moderate multi-factor risk score of {mfa_score:.2f}."
+        verdict = "LOW_RISK"
         
-    status = "OUTLIER"
-    
-    # Emit Kafka event for verification pipeline
-    kafka_producer.emit_event(
-        topic="shieldflow.anomalies",
-        key=user_id,
-        value={
-            "user_id": user_id,
-            "reason": reason,
-            "score": mfa_score,
-            "velocity_kmh": velocity_kmh,
-            "distance_km": closest_dist,
-            "device_mismatch": device_mismatch,
-            "verdict": verdict
-        }
-    )
-    
     return {
         "verdict": verdict,
-        "status": status,
-        "score": mfa_score,
-        "reason": reason,
+        "status": res.status,
+        "score": res.risk_score / 100.0,
+        "reason": res.reasons[0] if res.reasons else "",
         "details": {
-            "velocity_kmh": round(velocity_kmh, 2),
-            "distance_km": round(closest_dist, 2),
-            "device_mismatch": device_mismatch
+            "velocity_kmh": round(res.details.velocity_kmh, 2),
+            "distance_km": round(res.details.distance_km, 2) if res.status not in ["IMPOSSIBLE_VELOCITY", "COLD_START_BYPASS"] else None,
+            "device_mismatch": res.details.device_mismatch if res.status == "OUTLIER" else None
         }
     }
+
+@app.post("/analyze")
+def analyze(event: LoginEvent):
+    """SDK-native analysis endpoint."""
+    return detector.analyze({
+        "user_id": event.user_id,
+        "latitude": event.latitude,
+        "longitude": event.longitude,
+        "timestamp": event.timestamp,
+        "device_hash": event.device_hash
+    })
 
 @app.post("/verify_anomaly")
 def verify_anomaly(payload: AnomalyVerification, background_tasks: BackgroundTasks):
@@ -204,12 +107,12 @@ def verify_anomaly(payload: AnomalyVerification, background_tasks: BackgroundTas
     device = payload.device_hash
     is_verified = payload.is_verified
     
-    # 1. Record the outcome in DB
-    db_client.record_login(user_id, lat, lon, ts, device, is_verified)
+    # 1. Record the outcome in DB using SDK's adapter
+    detector.pipeline.db_store.record_login(user_id, lat, lon, ts, device, is_verified)
     
-    # 2. Update cache if verified
+    # 2. Update cache if verified using SDK's adapter
     if is_verified:
-        redis_client.set_last_node(user_id, {"latitude": lat, "longitude": lon, "timestamp": ts, "device_hash": device})
+        detector.pipeline.cache_store.set_last_node(user_id, {"latitude": lat, "longitude": lon, "timestamp": ts, "device_hash": device})
         
     # 3. Trigger Retraining Engine check as a background task
     retrain_verdict = {}

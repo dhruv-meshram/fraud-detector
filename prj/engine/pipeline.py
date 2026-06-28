@@ -27,6 +27,11 @@ class DetectionPipeline:
 
         # 1. Fetch last verified login node
         last_node = self.cache_store.get_last_node(user_id)
+        if not last_node:
+            last_node = self.db_store.get_last_verified_login(user_id)
+            if last_node:
+                # Auto-hydrate cache
+                self.cache_store.set_last_node(user_id, last_node)
         velocity_kmh = 0.0
 
         # 2. Graph Validator: Spatiotemporal Velocity Check

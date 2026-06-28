@@ -1,81 +1,152 @@
-# ShieldFlow Anomaly & Fraud Detection Engine
+# ShieldFlow Anomaly & Fraud Detection Engine (SDK)
 
-ShieldFlow is a context-aware, low-latency login anomaly and fraud detection engine designed to identify credentials misuse, session hijacking, and impossible-travel events. It operates on a bifurcated architecture that separates deterministic check paths from heavy machine learning clustering.
+ShieldFlow is a context-aware, low-latency login anomaly and fraud detection engine designed to identify credentials misuse, session hijacking, and impossible-travel events.
+
+It has been redesigned as a **fully decoupled, reusable Python SDK (`prj`)** that can be integrated into external applications, with customizable storage, cache, database, and broker adapters.
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ Architecture & SDK Design
 
-ShieldFlow partitions its detection logic into two paths to guarantee sub-millisecond real-time responses:
+ShieldFlow partitions its detection logic into two paths:
 
 1. **Fast Path (Live Inference)**
-   - Operates in real-time at the edge/gateway layer (FastAPI & Redis).
-   - Runs fast rule-based validations, such as Spatiotemporal Velocity (impossible travel checks) and cached boundary checks using centroid-distance lookups.
-
+   - Rules-based validations (Spatiotemporal Velocity) and boundary checks using DBSCAN cluster profiles.
 2. **Slow Path (Offline Batch Training)**
-   - Runs asynchronously in the background.
-   - Sanitizes historical authenticated logins (Null coordinate drop, 10s deduplication, outlier filtering).
-   - Trains unsupervised **DBSCAN** models per user to identify habitual spatial boundaries and centroids, avoiding spherical assumptions and auto-filtering noise.
+   - DBSCAN models trained per user to identify habitual spatial boundaries.
+
+### Adapter Pattern Integration
+
+The SDK is decoupled from infrastructure via abstract base classes in `prj/adapters/base.py`. Developers can plug in their own storage engines:
+
+- **Profile Store (`BaseProfileStore`)**: Retrieves user spatial boundary profiles.
+  - *Production*: `PostgreSQLProfileStore` (hydrates from Redis or reads from filesystem fallback).
+  - *Headless / Testing*: `InMemoryProfileStore` (completely stateless).
+- **Cache Store (`BaseCacheStore`)**: Manages real-time session caching of the last login node.
+  - *Production*: `RedisCacheStore`.
+  - *Headless / Testing*: `InMemoryCacheStore`.
+- **Database Store (`BaseDBStore`)**: Commits confirmed logins and checks historic device logs.
+  - *Production*: `PostgresDBStore` (simulated via pandas CSV).
+  - *Headless / Testing*: `InMemoryDBStore`.
+- **Alert Producer (`BaseAlertProducer`)**: Dispatches asynchronous streaming anomaly alerts.
+  - *Production*: `KafkaAlertProducer`.
+  - *Headless / Testing*: `ConsoleAlertProducer`.
 
 ---
 
-## 📂 Project Structure
+## 📦 Package Structure
 
 ```directory
-├── algorithms/             # Hardcoded fast-path detection mathematics
-│   ├── spatial/            # Haversine distance calculators
-│   └── graph/              # Spatiotemporal travel velocity models
-├── app/                    # FastAPI main edge application
-├── configs/                # Environment-specific configuration files
-├── core/                   # Shared DDD domain entities & schemas
-├── data/                   # Data directory
-│   ├── raw/                # Synthetic raw logins (synthetic_logins.csv)
-│   └── processed/          # Clean preprocessed logins (clean_logins.csv)
-├── deployment/             # Docker, PostgreSQL, Redis configurations
-├── docs/                   # ML and System design documentation
-├── ml/                     # Machine learning workflows (Slow Path)
-│   ├── datasets/           # Chronological queue-based generators
-│   ├── features/           # Feature extraction and Radian converters
-│   ├── models/             # PyTorch-accelerated DBSCAN architectures
-│   └── preprocessing/      # Cleaning and 10s window deduplication
-└── services/               # Internal orchestrators
+├── prj/                       # Core SDK Package
+│   ├── __init__.py            # Exposes FraudDetector public interface
+│   ├── engine/                # Core pipeline orchestration
+│   │   ├── detector.py        # FraudDetector orchestrator
+│   │   └── pipeline.py        # DetectionPipeline
+│   ├── models/                # Pydantic v2 domain schemas (LoginEvent, FraudResult)
+│   ├── algorithms/            # Stateless mathematical algorithms (Haversine, Graph velocity)
+│   ├── ml/                    # DBSCAN ML inference loader
+│   └── adapters/              # Infrastructure adapters (Redis, Postgres, Kafka, In-Memory)
+├── app/                       # FastAPI controller layer (consumes SDK)
+├── tests/                     # Unit and Integration test suite
+├── pyproject.toml             # Python packaging configuration
 ```
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Installation
 
-### 1. Prerequisites
-- Python 3.10 or higher
-- `venv` (Python Virtual Environment package)
+You can install the SDK locally in editable mode or from a git repository:
 
-### 2. Setup Virtual Environment & Install Dependencies
-Initialize the virtual environment and install standard requirements:
 ```bash
-# Create local virtual environment
-python3 -m venv venv
+# Install locally
+pip install -e .
 
-# Upgrade package manager
-venv/bin/pip install --upgrade pip
-
-# Install dependencies (Pandas, Numpy)
-venv/bin/pip install pandas
+# Install directly from git
+pip install git+https://github.com/your-org/fraud-detector.git
 ```
 
 ---
 
-## ⚙️ How to Run the Pipeline
+## 💡 Usage Examples
 
-### Step 1: Generate Labeled Synthetic Dataset
-ShieldFlow uses a queue-based chronologically streamed generation algorithm to create 75,000 login records across 1,000 distinct user profiles:
-```bash
-python3 ml/datasets/synthetic_generator.py
-```
-*Output File:* `data/raw/synthetic_logins.csv`
+### 1. Headless / Testing Setup (Zero External Dependencies)
 
-### Step 2: Clean & Preprocess Data
-Run the sanitization pipeline to apply coordinate dropouts, sort logs per user ascending, deduplicate same-device logins within a 10s window, and prune impossible travel outliers:
-```bash
-venv/bin/python ml/preprocessing/run_pipeline.py
+Perfect for CI/CD pipelines, local testing, or serverless environments where Redis/Postgres/Kafka are not available.
+
+```python
+from prj import FraudDetector
+from prj.adapters import (
+    InMemoryProfileStore,
+    InMemoryCacheStore,
+    InMemoryDBStore,
+    ConsoleAlertProducer
+)
+
+# Initialize in-memory adapters
+detector = FraudDetector(
+    profile_store=InMemoryProfileStore(),
+    cache_store=InMemoryCacheStore(),
+    db_store=InMemoryDBStore(),
+    alert_producer=ConsoleAlertProducer()
+)
+
+# Seed database with user's last verified node
+detector.pipeline.db_store.record_login(
+    user_id="test_user",
+    lat=37.7749,
+    lon=-122.4194,
+    ts=1600000000.0,
+    device_hash="dev_iphone",
+    is_verified=True
+)
+
+# Analyze an impossible travel event (London, 1 hour later)
+result = detector.analyze({
+    "user_id": "test_user",
+    "latitude": 51.5074,
+    "longitude": -0.1278,
+    "timestamp": 1600003600.0,
+    "device_hash": "dev_iphone"
+})
+
+print(result.status)        # IMPOSSIBLE_VELOCITY
+print(result.risk_score)    # 100.0
+print(result.is_fraudulent) # True
 ```
-*Output File:* `data/processed/clean_logins.csv`
+
+### 2. Production Setup (Redis, PostgreSQL, Kafka)
+
+```python
+from prj import FraudDetector
+from prj.adapters import (
+    PostgreSQLProfileStore,
+    RedisCacheStore,
+    PostgresDBStore,
+    KafkaAlertProducer
+)
+
+detector = FraudDetector(
+    profile_store=PostgreSQLProfileStore(),
+    cache_store=RedisCacheStore(),
+    db_store=PostgresDBStore(),
+    alert_producer=KafkaAlertProducer()
+)
+
+result = detector.analyze({
+    "user_id": "user_123",
+    "latitude": 19.1100,
+    "longitude": 72.8300,
+    "timestamp": 1780000000.0,
+    "device_hash": "dev_abc123"
+})
+```
+
+---
+
+## 🧪 Running the Test Suite
+
+Verify that all 20 tests are passing:
+
+```bash
+venv/bin/pytest
+```
