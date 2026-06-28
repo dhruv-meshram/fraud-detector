@@ -60,10 +60,29 @@ venv.bak/
 
 # Data and Models
 data/raw/*.csv
-data/processed/*.csv
+data/processed/
 *.pt
 *.pth
 *.pkl
 *.joblib
+
+# Logs
+*.log
+logs/
+
+# Databases & MLflow
+mlflow.db
+mlruns/
+*.db
+*.sqlite
+*.sqlite3
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# Environments / Secrets
+.env
+.env.*
+!.env.example
 
 /docs

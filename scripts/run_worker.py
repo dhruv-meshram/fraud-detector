@@ -1,3 +1,84 @@
-"""Celery Worker to consume Kafka events and queue ML training tasks."""
+"""ShieldFlow Celery Background Task Orchestrator.
 
-# TODO: Implement Celery/Kafka worker loop
+Defines the Celery application and worker tasks for asynchronous micro-model retraining,
+ensuring training is offloaded from the real-time API loop.
+"""
+
+import os
+import sys
+from pathlib import Path
+import pandas as pd
+
+# pyrefly: ignore [missing-import]
+from celery import Celery
+
+# Ensure project root is in the path
+sys.path.append(str(Path(__file__).parent.parent))
+
+from ml.training.train_pipeline import train_user_model, DEFAULT_CLEAN_LOGINS_PATH
+from ml.models.registry import ModelRegistry
+
+# Retrieve broker from environment or default to local Redis container
+REDIS_BROKER = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
+
+app = Celery(
+    "shieldflow_worker",
+    broker=REDIS_BROKER,
+    backend=REDIS_BROKER
+)
+
+# Celery configurations
+app.conf.update(
+    task_serializer="json",
+    accept_content=["json"],
+    result_serializer="json",
+    timezone="UTC",
+    enable_utc=True,
+    task_acks_late=True,
+    worker_prefetch_multiplier=1
+)
+
+@app.task(name="tasks.retrain_user_model")
+def retrain_user_model_task(user_id: str) -> bool:
+    """Asynchronously retrains a user's DBSCAN model and hydrates the registry.
+    
+    Args:
+        user_id: User ID to retrain.
+        
+    Returns:
+        Boolean indicating task success.
+    """
+    print(f"[WORKER] Starting asynchronous retraining for user {user_id}...")
+    
+    clean_logins_path = Path(DEFAULT_CLEAN_LOGINS_PATH)
+    if not clean_logins_path.exists():
+        print(f"[WORKER ERROR] Clean logins database {clean_logins_path} does not exist.")
+        return False
+        
+    try:
+        # 1. Load user logs
+        df = pd.read_csv(clean_logins_path)
+        user_df = df[df['user_id'] == user_id]
+        
+        if len(user_df) < 10:
+            print(f"[WORKER WARNING] User {user_id} has {len(user_df)} logins. Bypassing training due to sparse data.")
+            return False
+            
+        # 2. Re-train micro-model
+        profile = train_user_model(user_id, user_df)
+        
+        # 3. Save profile to registry (updates file & Redis)
+        registry = ModelRegistry()
+        success = registry.register_profile(user_id, profile)
+        
+        print(f"[WORKER] Successfully retrained and registered model for user {user_id}.")
+        return success
+        
+    except Exception as e:
+        print(f"[WORKER ERROR] Retraining failed for user {user_id}: {e}")
+        return False
+
+if __name__ == "__main__":
+    # Start the Celery worker locally if executed directly
+    print("[WORKER] Starting Celery worker loop...")
+    app.start(argv=["worker", "--loglevel=info"])
