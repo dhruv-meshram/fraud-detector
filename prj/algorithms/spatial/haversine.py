@@ -21,3 +21,13 @@ def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
         
     c = 2.0 * math.asin(math.sqrt(a))
     return R_EARTH * c
+
+def spatiotemporal_velocity(lat1: float, lon1: float, t1: float, lat2: float, lon2: float, t2: float) -> float:
+    """Calculates spatiotemporal velocity in km/h between two logins."""
+    dist_km = haversine_distance(lat1, lon1, lat2, lon2)
+    time_diff_sec = abs(t2 - t1)
+    if time_diff_sec == 0:
+        return 0.0
+    time_diff_hours = time_diff_sec / 3600.0
+    return dist_km / time_diff_hours
+

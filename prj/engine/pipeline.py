@@ -1,7 +1,6 @@
 from prj.models.event import LoginEvent
 from prj.models.result import FraudResult, RiskBreakdown
-from ml.features.geo_features import spatiotemporal_velocity
-from prj.algorithms import validate_velocity, calculate_risk_score, haversine_distance
+from prj.algorithms import validate_velocity, calculate_risk_score, haversine_distance, spatiotemporal_velocity
 from prj.ml.inference import InferenceService
 from prj.adapters import FileProfileStore, RedisCacheStore, PostgresDBStore, KafkaAlertProducer
 

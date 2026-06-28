@@ -1,0 +1,20 @@
+{
+  "batch_100": {
+    "size": 100,
+    "elapsed_seconds": 0.0005,
+    "throughput_eps": 203018.48,
+    "average_latency_ms": 0.0049
+  },
+  "batch_1000": {
+    "size": 1000,
+    "elapsed_seconds": 0.0059,
+    "throughput_eps": 170641.16,
+    "average_latency_ms": 0.0059
+  },
+  "batch_10000": {
+    "size": 10000,
+    "elapsed_seconds": 0.0552,
+    "throughput_eps": 181091.13,
+    "average_latency_ms": 0.0055
+  }
+}
