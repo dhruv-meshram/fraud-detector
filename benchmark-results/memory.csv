@@ -3,6 +3,6 @@ single_event_inference,2.39,0.46
 repeated_1000_inference,274.06,271.98
 scale_users_1,349.7,N/A
 scale_users_10,352.6,N/A
-scale_users_100,366.37,N/A
+scale_users_100,366.03,N/A
 scale_users_1000,473.81,N/A
 scale_users_10000,551.62,N/A

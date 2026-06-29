@@ -7,8 +7,7 @@ import pytest
 # pyrefly: ignore [missing-import]
 import torch
 
-from ml.features.geo_features import torch_haversine_matrix, haversine_distance_numpy, to_radians
-from ml.training.train_pipeline import calculate_geographic_centroid
+from fraud_detector.ml.features.geo_features import torch_haversine_matrix, haversine_distance_numpy, to_radians, calculate_geographic_centroid
 
 def haversine_cpu_basic(lat1, lon1, lat2, lon2):
     """Basic CPU Haversine calculation for parity checks."""

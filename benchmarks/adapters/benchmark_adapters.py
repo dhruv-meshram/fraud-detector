@@ -5,7 +5,7 @@ import json
 import tempfile
 from pathlib import Path
 from benchmarks.utils import measure_memory
-from prj.adapters import FileProfileStore, InMemoryProfileStore
+from fraud_detector.adapters import FileProfileStore, InMemoryProfileStore
 
 def run_adapter_benchmarks():
     """Measures load times, lookup times, and serialization costs for adapters."""

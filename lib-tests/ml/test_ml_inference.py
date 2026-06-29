@@ -2,8 +2,8 @@
 
 import pytest
 import time
-from prj import FraudDetector
-from prj.adapters import InMemoryProfileStore, InMemoryCacheStore, InMemoryDBStore, ConsoleAlertProducer
+from fraud_detector import FraudDetector
+from fraud_detector.adapters import InMemoryProfileStore, InMemoryCacheStore, InMemoryDBStore, ConsoleAlertProducer
 
 @pytest.fixture
 def ml_detector():

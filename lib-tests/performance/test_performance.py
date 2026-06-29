@@ -5,8 +5,8 @@ import time
 import os
 import json
 from pathlib import Path
-from prj import FraudDetector
-from prj.adapters import InMemoryProfileStore, InMemoryCacheStore, InMemoryDBStore, ConsoleAlertProducer
+from fraud_detector import FraudDetector
+from fraud_detector.adapters import InMemoryProfileStore, InMemoryCacheStore, InMemoryDBStore, ConsoleAlertProducer
 
 REPORTS_DIR = Path("/home/dhruv/Documents/fraud-detector/lib-tests/reports")
 

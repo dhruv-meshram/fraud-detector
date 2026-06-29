@@ -1,8 +1,8 @@
 """Unit tests demonstrating and verifying headless SDK usage using mock storage adapters."""
 
 import pytest
-from prj import FraudDetector
-from prj.adapters import (
+from fraud_detector import FraudDetector
+from fraud_detector.adapters import (
     InMemoryProfileStore,
     InMemoryCacheStore,
     InMemoryDBStore,

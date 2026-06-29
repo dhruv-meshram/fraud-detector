@@ -3,8 +3,8 @@
 import pytest
 import time
 import numpy as np
-from prj import FraudDetector
-from prj.adapters import InMemoryProfileStore, InMemoryCacheStore, InMemoryDBStore, ConsoleAlertProducer
+from fraud_detector import FraudDetector
+from fraud_detector.adapters import InMemoryProfileStore, InMemoryCacheStore, InMemoryDBStore, ConsoleAlertProducer
 
 def test_latency_distribution_benchmarks():
     """Calculates p50, p95, and p99 latency percentiles over a series of events."""

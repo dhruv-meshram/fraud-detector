@@ -3,9 +3,9 @@
 import time
 import numpy as np
 from benchmarks.utils import measure_memory
-from prj.ml.inference import InferenceService
-from prj.adapters import InMemoryProfileStore
-from prj.models.event import LoginEvent
+from fraud_detector.ml.inference import InferenceService
+from fraud_detector.adapters import InMemoryProfileStore
+from fraud_detector.models.event import LoginEvent
 
 def run_ml_benchmarks():
     """Benchmarks spatial centroid matching, profile loading, and percentiles."""

@@ -12,7 +12,8 @@ from typing import Dict, Any, Optional
 import redis
 import pandas as pd
 
-from ml.training.train_pipeline import DEFAULT_CLEAN_LOGINS_PATH, DEFAULT_PROFILES_DIR
+DEFAULT_CLEAN_LOGINS_PATH = Path("/home/dhruv/Documents/fraud-detector/data/processed/clean_logins.csv")
+DEFAULT_PROFILES_DIR = Path("/home/dhruv/Documents/fraud-detector/data/processed/profiles")
 
 class RedisClient:
     """Redis cache manager for last login nodes and active profiles."""

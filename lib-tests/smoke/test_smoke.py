@@ -1,9 +1,9 @@
 """Smoke tests verifying public module import and minimal detector operations."""
 
 import pytest
-from prj import FraudDetector
-from prj.models import LoginEvent, FraudResult
-from prj.adapters import InMemoryProfileStore, InMemoryCacheStore, InMemoryDBStore, ConsoleAlertProducer
+from fraud_detector import FraudDetector
+from fraud_detector.models import LoginEvent, FraudResult
+from fraud_detector.adapters import InMemoryProfileStore, InMemoryCacheStore, InMemoryDBStore, ConsoleAlertProducer
 
 def test_imports_and_instantiation():
     """Asserts that all public SDK modules, classes, and models can be imported and instantiated."""

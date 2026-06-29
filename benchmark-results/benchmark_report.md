@@ -6,19 +6,19 @@ Generated automatically after running the Benchmarking and Complexity Analysis s
 
 ## 📊 Performance Summary
 
-* **Average Detector Latency**: 0.0173 ms
-* **p50 (Median)**: 0.0130 ms
-* **p95**: 0.0279 ms
-* **p99**: 0.0340 ms
+* **Average Detector Latency**: 0.0088 ms
+* **p50 (Median)**: 0.0084 ms
+* **p95**: 0.0103 ms
+* **p99**: 0.0143 ms
 * **Peak Memory Usage**: 2.39 KB
 
 
 ### 🔄 Regression & History Analysis
 
 Compared with previous run (saved in `/benchmark-results/historical/`):
-* **Previous Average Latency**: 0.0087 ms
-* **Current Average Latency**: 0.0173 ms
-* **Delta**: 0.0086 ms (98.85% regression)
+* **Previous Average Latency**: 0.0091 ms
+* **Current Average Latency**: 0.0088 ms
+* **Delta**: -0.0003 ms (3.30% improvement)
 
 
 ---
@@ -27,12 +27,12 @@ Compared with previous run (saved in `/benchmark-results/historical/`):
 
 | Stage / Component | Average Latency | p95 Latency |
 | :--- | :--- | :--- |
-| fetch_last_node | 0.0002 ms | 0.0004 ms |
-| velocity_check | 0.0033 ms | 0.0049 ms |
-| ml_predict | 0.0025 ms | 0.0041 ms |
-| device_mismatch | 0.0013 ms | 0.0019 ms |
-| scoring | 0.0016 ms | 0.0026 ms |
-| alerting | 0.0049 ms | 0.0081 ms |
+| fetch_last_node | 0.0001 ms | 0.0002 ms |
+| velocity_check | 0.0017 ms | 0.0020 ms |
+| ml_predict | 0.0013 ms | 0.0015 ms |
+| device_mismatch | 0.0007 ms | 0.0008 ms |
+| scoring | 0.0008 ms | 0.0009 ms |
+| alerting | 0.0024 ms | 0.0028 ms |
 
 
 ---
@@ -41,12 +41,12 @@ Compared with previous run (saved in `/benchmark-results/historical/`):
 
 | Algorithm | Empirical Complexity | Time (N=100,000) | Peak Memory |
 | :--- | :--- | :--- | :--- |
-| haversine | O(n) | 64.9559 ms | 3123.90 KB |
-| bounding_box | O(n) | 39.1435 ms | 782.39 KB |
-| velocity_validator | O(n) | 63.2833 ms | 782.26 KB |
-| risk_scoring | O(n log n) | 54.8711 ms | 3123.80 KB |
-| balltree_build | O(n log n) | 44.8109 ms | 2540.55 KB |
-| balltree_query | O(n) | 0.2573 ms | 2.45 KB |
+| haversine | O(n) | 62.5601 ms | 3123.90 KB |
+| bounding_box | O(n) | 34.2280 ms | 782.39 KB |
+| velocity_validator | O(n) | 61.9836 ms | 782.26 KB |
+| risk_scoring | O(n) | 30.3797 ms | 3123.80 KB |
+| balltree_build | O(n log n) | 39.3618 ms | 2540.55 KB |
+| balltree_query | O(n) | 0.2585 ms | 2.45 KB |
 
 
 ---
@@ -55,11 +55,11 @@ Compared with previous run (saved in `/benchmark-results/historical/`):
 
 | User Count | Throughput (eps) | Average Latency | Peak Memory |
 | :--- | :--- | :--- | :--- |
-| 1 | 23456.1 | 0.0386 ms | 349.70 KB |
-| 10 | 28108.54 | 0.0321 ms | 352.60 KB |
-| 100 | 27220.22 | 0.0332 ms | 366.37 KB |
-| 1000 | 27280.17 | 0.0326 ms | 473.81 KB |
-| 10000 | 27213.87 | 0.0326 ms | 551.62 KB |
+| 1 | 31712.96 | 0.0285 ms | 349.70 KB |
+| 10 | 31561.62 | 0.0286 ms | 352.60 KB |
+| 100 | 31121.01 | 0.0291 ms | 366.03 KB |
+| 1000 | 30891.47 | 0.0287 ms | 473.81 KB |
+| 10000 | 30460.35 | 0.0291 ms | 551.62 KB |
 
 * **Latency Growth Complexity**: O(log n)
 
@@ -69,9 +69,9 @@ Compared with previous run (saved in `/benchmark-results/historical/`):
 
 | Batch Size | Seq Throughput (eps) | Seq Avg Latency | Par Throughput (eps) | Par Avg Latency |
 | :--- | :--- | :--- | :--- | :--- |
-| 100 | 13264.02 | 0.0754 ms | 4113.47 | 0.2431 ms |
-| 1000 | 10403.04 | 0.0961 ms | 3457.37 | 0.2892 ms |
-| 10000 | 5422.82 | 0.1844 ms | 2474.93 | 0.4041 ms |
+| 100 | 13329.38 | 0.0750 ms | 4497.51 | 0.2223 ms |
+| 1000 | 8845.78 | 0.1130 ms | 4819.59 | 0.2075 ms |
+| 10000 | 7040.24 | 0.1420 ms | 3543.34 | 0.2822 ms |
 
 
 ---

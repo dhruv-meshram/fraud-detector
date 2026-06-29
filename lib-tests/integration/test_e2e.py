@@ -1,8 +1,8 @@
 """End-to-End simulation tests validating the entire user lifecycle and detection system."""
 
 import pytest
-from prj import FraudDetector
-from prj.adapters import InMemoryProfileStore, InMemoryCacheStore, InMemoryDBStore, ConsoleAlertProducer
+from fraud_detector import FraudDetector
+from fraud_detector.adapters import InMemoryProfileStore, InMemoryCacheStore, InMemoryDBStore, ConsoleAlertProducer
 
 def test_full_user_lifecycle_e2e():
     """Simulates a complete user lifecycle:

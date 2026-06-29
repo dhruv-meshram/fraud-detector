@@ -2,8 +2,8 @@
 
 import time
 import tracemalloc
-from prj import FraudDetector
-from prj.adapters import InMemoryProfileStore, InMemoryCacheStore, InMemoryDBStore, ConsoleAlertProducer
+from fraud_detector import FraudDetector
+from fraud_detector.adapters import InMemoryProfileStore, InMemoryCacheStore, InMemoryDBStore, ConsoleAlertProducer
 
 def run_memory_benchmarks():
     """Tracks peak memory usage, allocation growth, and verifies leak bounds."""

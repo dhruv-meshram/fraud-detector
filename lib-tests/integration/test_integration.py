@@ -2,8 +2,8 @@
 
 import pytest
 from pathlib import Path
-from prj import FraudDetector
-from prj.adapters import (
+from fraud_detector import FraudDetector
+from fraud_detector.adapters import (
     InMemoryProfileStore,
     InMemoryCacheStore,
     InMemoryDBStore,

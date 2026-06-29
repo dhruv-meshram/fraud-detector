@@ -1,8 +1,8 @@
 """Regression tests verifying stability of outputs and preventing scoring/verdict drift."""
 
 import pytest
-from prj import FraudDetector
-from prj.adapters import InMemoryProfileStore, InMemoryCacheStore, InMemoryDBStore, ConsoleAlertProducer
+from fraud_detector import FraudDetector
+from fraud_detector.adapters import InMemoryProfileStore, InMemoryCacheStore, InMemoryDBStore, ConsoleAlertProducer
 
 def test_fixed_impossible_travel_regression():
     """Asserts that a fixed, known impossible travel event produces the exact same risk outputs."""

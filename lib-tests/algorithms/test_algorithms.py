@@ -1,8 +1,8 @@
 """Algorithmic tests verifying rules-based fraud detection via the public API."""
 
 import pytest
-from prj import FraudDetector
-from prj.adapters import InMemoryProfileStore, InMemoryCacheStore, InMemoryDBStore, ConsoleAlertProducer
+from fraud_detector import FraudDetector
+from fraud_detector.adapters import InMemoryProfileStore, InMemoryCacheStore, InMemoryDBStore, ConsoleAlertProducer
 
 @pytest.fixture
 def clean_detector():

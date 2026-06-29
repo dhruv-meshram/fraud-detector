@@ -36,7 +36,7 @@ def execute_benchmarks():
     
     # 1. Run cProfile on detector.analyze()
     print("Running cProfile instrumentation...")
-    from prj import FraudDetector
+    from fraud_detector import FraudDetector
     detector = FraudDetector()
     prof = cProfile.Profile()
     event = {

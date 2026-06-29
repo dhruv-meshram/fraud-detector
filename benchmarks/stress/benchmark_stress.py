@@ -2,8 +2,8 @@
 
 import time
 import concurrent.futures
-from prj import FraudDetector
-from prj.adapters import InMemoryProfileStore, InMemoryCacheStore, InMemoryDBStore, ConsoleAlertProducer
+from fraud_detector import FraudDetector
+from fraud_detector.adapters import InMemoryProfileStore, InMemoryCacheStore, InMemoryDBStore, ConsoleAlertProducer
 
 def run_stress_benchmarks():
     """Executes intensive loads and malformed payloads to detect crashes or slowdowns."""

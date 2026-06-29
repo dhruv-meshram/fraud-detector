@@ -3,10 +3,10 @@
 import time
 import numpy as np
 from benchmarks.utils import measure_memory
-from prj import FraudDetector
-from prj.engine.pipeline import DetectionPipeline
-from prj.adapters import InMemoryProfileStore, InMemoryCacheStore, InMemoryDBStore, ConsoleAlertProducer
-from prj.models.event import LoginEvent
+from fraud_detector import FraudDetector
+from fraud_detector.engine.pipeline import DetectionPipeline
+from fraud_detector.adapters import InMemoryProfileStore, InMemoryCacheStore, InMemoryDBStore, ConsoleAlertProducer
+from fraud_detector.models.event import LoginEvent
 
 class InstrumentedDetectionPipeline(DetectionPipeline):
     """Subclass of DetectionPipeline that instruments each stage for precise timing."""
@@ -42,7 +42,7 @@ class InstrumentedDetectionPipeline(DetectionPipeline):
         t0 = time.perf_counter()
         velocity_kmh = 0.0
         if last_node:
-            from prj.algorithms import spatiotemporal_velocity, validate_velocity
+            from fraud_detector.algorithms import spatiotemporal_velocity, validate_velocity
             velocity_kmh = spatiotemporal_velocity(
                 last_node["latitude"], last_node["longitude"], last_node["timestamp"],
                 lat, lon, ts
@@ -73,7 +73,7 @@ class InstrumentedDetectionPipeline(DetectionPipeline):
 
         # 5. Risk Scoring
         t0 = time.perf_counter()
-        from prj.algorithms import calculate_risk_score
+        from fraud_detector.algorithms import calculate_risk_score
         closest_dist = evaluation["distance_km"]
         mfa_score = calculate_risk_score(velocity_kmh, closest_dist, device_mismatch)
         self.stage_timings["scoring"].append((time.perf_counter() - t0) * 1000)

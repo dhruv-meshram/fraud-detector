@@ -1,0 +1,185 @@
+{
+  "timestamp": 1782742998,
+  "engine": {
+    "total_latency": {
+      "p50": 0.0084,
+      "p95": 0.0103,
+      "p99": 0.0143,
+      "avg": 0.0088
+    },
+    "stages": {
+      "fetch_last_node": {
+        "avg_ms": 0.0001,
+        "p95_ms": 0.0002
+      },
+      "velocity_check": {
+        "avg_ms": 0.0017,
+        "p95_ms": 0.002
+      },
+      "ml_predict": {
+        "avg_ms": 0.0013,
+        "p95_ms": 0.0015
+      },
+      "device_mismatch": {
+        "avg_ms": 0.0007,
+        "p95_ms": 0.0008
+      },
+      "scoring": {
+        "avg_ms": 0.0008,
+        "p95_ms": 0.0009
+      },
+      "alerting": {
+        "avg_ms": 0.0024,
+        "p95_ms": 0.0028
+      }
+    },
+    "peak_memory_kb": 2.07
+  },
+  "ml": {
+    "small_user": {
+      "profile_load": {
+        "p50": 0.0001,
+        "p95": 0.0001,
+        "p99": 0.0002
+      },
+      "inference": {
+        "p50": 0.001,
+        "p95": 0.0011,
+        "p99": 0.0016
+      },
+      "peak_memory_kb": 0.09
+    },
+    "medium_user": {
+      "profile_load": {
+        "p50": 0.0001,
+        "p95": 0.0001,
+        "p99": 0.0001
+      },
+      "inference": {
+        "p50": 0.0022,
+        "p95": 0.0024,
+        "p99": 0.0039
+      },
+      "peak_memory_kb": 0.09
+    },
+    "large_user": {
+      "profile_load": {
+        "p50": 0.0001,
+        "p95": 0.0001,
+        "p99": 0.0001
+      },
+      "inference": {
+        "p50": 0.0071,
+        "p95": 0.0081,
+        "p99": 0.0103
+      },
+      "peak_memory_kb": 0.09
+    }
+  },
+  "memory": {
+    "single_event": {
+      "peak_memory_kb": 2.39,
+      "allocated_kb": 0.46
+    },
+    "repeated_1000_runs": {
+      "peak_memory_kb": 274.06,
+      "allocated_kb": 271.98,
+      "leak_per_event_bytes": 278.504
+    }
+  },
+  "scalability": {
+    "users_1": {
+      "user_count": 1,
+      "throughput_eps": 31712.96,
+      "average_latency_ms": 0.0285,
+      "peak_memory_kb": 349.7
+    },
+    "users_10": {
+      "user_count": 10,
+      "throughput_eps": 31561.62,
+      "average_latency_ms": 0.0286,
+      "peak_memory_kb": 352.6
+    },
+    "users_100": {
+      "user_count": 100,
+      "throughput_eps": 31121.01,
+      "average_latency_ms": 0.0291,
+      "peak_memory_kb": 366.03
+    },
+    "users_1000": {
+      "user_count": 1000,
+      "throughput_eps": 30891.47,
+      "average_latency_ms": 0.0287,
+      "peak_memory_kb": 473.81
+    },
+    "users_10000": {
+      "user_count": 10000,
+      "throughput_eps": 30460.35,
+      "average_latency_ms": 0.0291,
+      "peak_memory_kb": 551.62
+    },
+    "complexity": "O(log n)"
+  },
+  "batch": {
+    "batch_100": {
+      "size": 100,
+      "sequential": {
+        "elapsed_seconds": 0.0075,
+        "throughput_eps": 13329.38,
+        "average_latency_ms": 0.075,
+        "peak_memory_kb": 219.25
+      },
+      "parallel": {
+        "elapsed_seconds": 0.0222,
+        "throughput_eps": 4497.51,
+        "average_latency_ms": 0.2223,
+        "peak_memory_kb": 259.02
+      }
+    },
+    "batch_1000": {
+      "size": 1000,
+      "sequential": {
+        "elapsed_seconds": 0.113,
+        "throughput_eps": 8845.78,
+        "average_latency_ms": 0.113,
+        "peak_memory_kb": 2173.75
+      },
+      "parallel": {
+        "elapsed_seconds": 0.2075,
+        "throughput_eps": 4819.59,
+        "average_latency_ms": 0.2075,
+        "peak_memory_kb": 2279.42
+      }
+    },
+    "batch_10000": {
+      "size": 10000,
+      "sequential": {
+        "elapsed_seconds": 1.4204,
+        "throughput_eps": 7040.24,
+        "average_latency_ms": 0.142,
+        "peak_memory_kb": 21872.77
+      },
+      "parallel": {
+        "elapsed_seconds": 2.8222,
+        "throughput_eps": 3543.34,
+        "average_latency_ms": 0.2822,
+        "peak_memory_kb": 22113.06
+      }
+    }
+  },
+  "stress": {
+    "continuous_inference": {
+      "count": 1000,
+      "elapsed_seconds": 0.0056,
+      "early_avg_ms": 0.0065,
+      "late_avg_ms": 0.0067,
+      "slowdown_ratio": 1.03
+    },
+    "malformed_input_flood": {
+      "count": 500,
+      "errors_caught": 500,
+      "elapsed_seconds": 0.0005,
+      "robustness_pct": 100.0
+    }
+  }
+}

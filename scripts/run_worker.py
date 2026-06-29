@@ -15,8 +15,8 @@ from celery import Celery
 # Ensure project root is in the path
 sys.path.append(str(Path(__file__).parent.parent))
 
-from ml.training.train_pipeline import train_user_model, DEFAULT_CLEAN_LOGINS_PATH
-from ml.models.registry import ModelRegistry
+from training.train_pipeline import train_user_model, DEFAULT_CLEAN_LOGINS_PATH
+from fraud_detector.ml.models.registry import ModelRegistry
 
 # Retrieve broker from environment or default to local Redis container
 REDIS_BROKER = os.environ.get("REDIS_URL", "redis://localhost:6379/0")

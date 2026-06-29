@@ -1,8 +1,8 @@
 """Unit tests for spatial and graph mathematical logic."""
 
 import pytest
-from algorithms.spatial.haversine import haversine_distance
-from algorithms.spatial.bounding_box import in_bounding_box
+from fraud_detector.algorithms.spatial.haversine import haversine_distance
+from fraud_detector.algorithms.spatial.bounding_box import in_bounding_box
 
 def test_haversine():
     # Distance from NY to SF (~4130 km)
@@ -49,7 +49,7 @@ def test_bounding_box_polar_safety():
     assert in_bounding_box(89.9, 179.0, center_lat, center_lon, radius) is True
 
 def test_velocity_validator():
-    from algorithms.graph.velocity_validator import validate_velocity
+    from fraud_detector.algorithms.graph.velocity_validator import validate_velocity
     
     # 1. Physically possible speed (NY to Philadelphia, ~150km, in 2 hours = 75 km/h)
     login1 = {"latitude": 40.7128, "longitude": -74.0060, "timestamp": 1600000000.0}
@@ -70,7 +70,7 @@ def test_velocity_validator():
     assert validate_velocity(login1, login5) is False
 
 def test_multi_factor_score():
-    from algorithms.ranking.multi_factor_score import calculate_risk_score
+    from fraud_detector.algorithms.ranking.multi_factor_score import calculate_risk_score
     
     # 1. Minimum risk scenario (low speed, close to centroid, matching device)
     assert calculate_risk_score(50.0, 5.0, False) == 0.0
@@ -87,7 +87,7 @@ def test_multi_factor_score():
 
 def test_ball_tree():
     import numpy as np
-    from algorithms.trees.ball_tree import BallTree
+    from fraud_detector.algorithms.trees.ball_tree import BallTree
     
     # Coordinates of SF, NY, Philadelphia
     coords = np.array([

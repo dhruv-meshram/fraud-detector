@@ -4,9 +4,9 @@ import time
 import numpy as np
 from benchmarks.datasets.generator import generate_coordinates
 from benchmarks.utils import fit_complexity, measure_memory
-from prj.algorithms import haversine_distance, validate_velocity, calculate_risk_score
-from prj.algorithms.spatial.bounding_box import in_bounding_box
-from prj.algorithms.trees.ball_tree import BallTree
+from fraud_detector.algorithms import haversine_distance, validate_velocity, calculate_risk_score
+from fraud_detector.algorithms.spatial.bounding_box import in_bounding_box
+from fraud_detector.algorithms.trees.ball_tree import BallTree
 
 def run_algo_benchmarks():
     """Runs timing and memory benchmarks for all algorithms and estimates empirical complexity."""

@@ -2,9 +2,9 @@
 
 import pytest
 from pydantic import ValidationError
-from prj.models import LoginEvent, FraudResult
-from prj import FraudDetector
-from prj.adapters import InMemoryProfileStore, InMemoryCacheStore, InMemoryDBStore, ConsoleAlertProducer
+from fraud_detector.models import LoginEvent, FraudResult
+from fraud_detector import FraudDetector
+from fraud_detector.adapters import InMemoryProfileStore, InMemoryCacheStore, InMemoryDBStore, ConsoleAlertProducer
 
 def test_login_event_validation_constraints():
     """Asserts that LoginEvent strictly validates field constraints and types."""

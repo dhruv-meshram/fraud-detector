@@ -3,8 +3,8 @@
 import time
 import tracemalloc
 import numpy as np
-from prj import FraudDetector
-from prj.adapters import InMemoryProfileStore, InMemoryCacheStore, InMemoryDBStore, ConsoleAlertProducer
+from fraud_detector import FraudDetector
+from fraud_detector.adapters import InMemoryProfileStore, InMemoryCacheStore, InMemoryDBStore, ConsoleAlertProducer
 from benchmarks.utils import fit_complexity
 
 def run_scalability_benchmarks():

@@ -6,7 +6,7 @@ import pytest
 # pyrefly: ignore [missing-import]
 import fakeredis
 
-from ml.models.registry import ModelRegistry
+from fraud_detector.ml.models.registry import ModelRegistry
 from app.services import RedisClient
 
 @pytest.fixture

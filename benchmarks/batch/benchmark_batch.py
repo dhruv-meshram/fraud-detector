@@ -3,8 +3,8 @@
 import time
 import tracemalloc
 import concurrent.futures
-from prj import FraudDetector
-from prj.adapters import InMemoryProfileStore, InMemoryCacheStore, InMemoryDBStore, ConsoleAlertProducer
+from fraud_detector import FraudDetector
+from fraud_detector.adapters import InMemoryProfileStore, InMemoryCacheStore, InMemoryDBStore, ConsoleAlertProducer
 from benchmarks.datasets.generator import generate_events
 
 def analyze_batch_sequential(detector, events):

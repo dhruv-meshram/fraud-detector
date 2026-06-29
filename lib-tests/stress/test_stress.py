@@ -2,8 +2,8 @@
 
 import pytest
 import concurrent.futures
-from prj import FraudDetector
-from prj.adapters import InMemoryProfileStore, InMemoryCacheStore, InMemoryDBStore, ConsoleAlertProducer
+from fraud_detector import FraudDetector
+from fraud_detector.adapters import InMemoryProfileStore, InMemoryCacheStore, InMemoryDBStore, ConsoleAlertProducer
 
 def test_concurrent_inference_thread_safety():
     """Asserts that FraudDetector can safely process events concurrently in multi-threaded environments."""
