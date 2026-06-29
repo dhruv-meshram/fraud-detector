@@ -4,35 +4,35 @@
     "passed": 25,
     "failed": 0,
     "skipped": 0,
-    "total_elapsed_seconds": 0.6174,
+    "total_elapsed_seconds": 0.6276,
     "exit_code": 0
   },
   "performance": {
     "batch_100": {
       "size": 100,
       "elapsed_seconds": 0.0005,
-      "throughput_eps": 212196.19,
-      "average_latency_ms": 0.0047
+      "throughput_eps": 207969.82,
+      "average_latency_ms": 0.0048
     },
     "batch_1000": {
       "size": 1000,
-      "elapsed_seconds": 0.0047,
-      "throughput_eps": 211774.04,
-      "average_latency_ms": 0.0047
+      "elapsed_seconds": 0.0048,
+      "throughput_eps": 209673.14,
+      "average_latency_ms": 0.0048
     },
     "batch_10000": {
       "size": 10000,
-      "elapsed_seconds": 0.1034,
-      "throughput_eps": 96670.44,
-      "average_latency_ms": 0.0103
+      "elapsed_seconds": 0.1093,
+      "throughput_eps": 91506.14,
+      "average_latency_ms": 0.0109
     }
   },
   "latency_percentiles": {
-    "p50": 0.004,
-    "p95": 0.0053,
-    "p99": 0.0077,
-    "avg": 0.0043,
-    "throughput": 233918.45
+    "p50": 0.0049,
+    "p95": 0.0066,
+    "p99": 0.0087,
+    "avg": 0.0053,
+    "throughput": 189255.12
   },
   "failures": []
 }

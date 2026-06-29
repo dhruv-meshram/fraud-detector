@@ -22,7 +22,7 @@ from benchmarks.scalability.benchmark_scalability import run_scalability_benchma
 from benchmarks.batch.benchmark_batch import run_batch_benchmarks
 from benchmarks.stress.benchmark_stress import run_stress_benchmarks
 
-RESULTS_DIR = Path("/home/dhruv/Documents/fraud-detector/benchmark-results")
+RESULTS_DIR = Path("/home/dhruv/Documents/fraud-detector/benchmarks/results")
 HISTORICAL_DIR = RESULTS_DIR / "historical"
 
 def execute_benchmarks():
@@ -209,7 +209,7 @@ def format_comparison(prev, current):
     msg = f"""
 ### 🔄 Regression & History Analysis
 
-Compared with previous run (saved in `/benchmark-results/historical/`):
+Compared with previous run (saved in `/benchmarks/results/historical/`):
 * **Previous Average Latency**: {prev_lat:.4f} ms
 * **Current Average Latency**: {curr_lat:.4f} ms
 * **Delta**: {curr_lat - prev_lat:.4f} ms ({abs(pct_diff):.2f}% {action})

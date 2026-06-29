@@ -86,3 +86,4 @@ mlruns/
 !.env.example
 
 /docs
+/benchmarks/results
