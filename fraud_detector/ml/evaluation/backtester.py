@@ -19,7 +19,7 @@ from fraud_detector.ml.datasets.splitting import generate_walk_forward_splits
 from fraud_detector.ml.features.geo_features import torch_haversine_matrix, to_radians, haversine_distance_numpy, calculate_geographic_centroid
 from fraud_detector.ml.evaluation.metrics import calculate_silhouette_score, calculate_classification_metrics
 
-DEFAULT_INPUT_PATH = Path("/home/dhruv/Documents/fraud-detector/data/processed/clean_logins.csv")
+DEFAULT_INPUT_PATH = Path("/home/dhruv/Documents/fraud-detector/fraud_detector/data/processed/clean_logins.csv")
 
 def run_walk_forward_evaluation(df: pd.DataFrame, num_users: int, min_train: int, eps: float, min_samples: int):
     """Performs walk-forward evaluation over a subset of users and calculates metrics."""

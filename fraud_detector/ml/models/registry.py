@@ -10,7 +10,7 @@ from typing import Dict, Any, Optional
 # pyrefly: ignore [missing-import]
 import redis
 
-DEFAULT_PROFILES_DIR = Path("/home/dhruv/Documents/fraud-detector/data/processed/profiles")
+DEFAULT_PROFILES_DIR = Path("/home/dhruv/Documents/fraud-detector/fraud_detector/data/processed/profiles")
 
 
 class ModelRegistry:

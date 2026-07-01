@@ -9,7 +9,7 @@ from datetime import datetime
 from pathlib import Path
 
 # Target output path
-DEFAULT_OUTPUT_PATH = Path("/home/dhruv/Documents/fraud-detector/data/raw/synthetic_logins.csv")
+DEFAULT_OUTPUT_PATH = Path("/home/dhruv/Documents/fraud-detector/fraud_detector/data/raw/synthetic_logins.csv")
 
 # Configuration
 NUM_ROWS = 75000

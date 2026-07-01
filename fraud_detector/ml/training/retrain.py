@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 import pandas as pd
 
 from fraud_detector.ml.features.geo_features import spatiotemporal_velocity, haversine_distance_numpy
-from training.train_pipeline import train_user_model, DEFAULT_PROFILES_DIR, DEFAULT_CLEAN_LOGINS_PATH
+from fraud_detector.ml.training.train_pipeline import train_user_model, DEFAULT_PROFILES_DIR, DEFAULT_CLEAN_LOGINS_PATH
 from fraud_detector.ml.models.inference_ops import evaluate_login_location
 
 def run_time_driven_cron(

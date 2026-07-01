@@ -20,7 +20,7 @@ from fraud_detector.ml.features.geo_features import torch_haversine_matrix, to_r
 from fraud_detector.ml.evaluation.metrics import calculate_silhouette_score, calculate_classification_metrics
 from fraud_detector.ml.preprocessing.dedup import deduplicate_data
 
-DEFAULT_RAW_INPUT_PATH = Path("/home/dhruv/Documents/fraud-detector/data/raw/synthetic_logins.csv")
+DEFAULT_RAW_INPUT_PATH = Path("/home/dhruv/Documents/fraud-detector/fraud_detector/data/raw/synthetic_logins.csv")
 
 try:
     import mlflow

@@ -59,8 +59,8 @@ venv.bak/
 .DS_Store
 
 # Data and Models
-data/raw/*.csv
-data/processed/
+fraud_detector/data/raw/*.csv
+fraud_detector/data/processed/
 *.pt
 *.pth
 *.pkl

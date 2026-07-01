@@ -8,12 +8,12 @@ import argparse
 from pathlib import Path
 import pandas as pd
 
-from clean import clean_data
-from dedup import deduplicate_data
+from fraud_detector.ml.preprocessing.clean import clean_data
+from fraud_detector.ml.preprocessing.dedup import deduplicate_data
 
 # Input and Output paths
-DEFAULT_INPUT_PATH = Path("/home/dhruv/Documents/fraud-detector/data/raw/synthetic_logins.csv")
-DEFAULT_OUTPUT_PATH = Path("/home/dhruv/Documents/fraud-detector/data/processed/clean_logins.csv")
+DEFAULT_INPUT_PATH = Path("/home/dhruv/Documents/fraud-detector/fraud_detector/data/raw/synthetic_logins.csv")
+DEFAULT_OUTPUT_PATH = Path("/home/dhruv/Documents/fraud-detector/fraud_detector/data/processed/clean_logins.csv")
 
 def preprocess_pipeline(input_file: str, output_file: str):
     input_path = Path(input_file)

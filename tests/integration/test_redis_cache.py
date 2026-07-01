@@ -7,7 +7,7 @@ import pytest
 import fakeredis
 
 from fraud_detector.ml.models.registry import ModelRegistry
-from app.services import RedisClient
+from fraud_detector.adapters.cache import RedisCacheStore
 
 @pytest.fixture
 def mock_redis():
@@ -17,10 +17,10 @@ def mock_redis():
     fake_client.ping = lambda: True
     return fake_client
 
-def test_redis_client_caching_and_fallback(mock_redis):
-    """Verifies that RedisClient correctly stores and retrieves last login nodes."""
+def test_redis_cache_store_caching(mock_redis):
+    """Verifies that RedisCacheStore correctly stores and retrieves last login nodes."""
     with patch('redis.from_url', return_value=mock_redis):
-        client = RedisClient()
+        client = RedisCacheStore()
         assert client.client is mock_redis
         
         user_id = "integration_test_user"

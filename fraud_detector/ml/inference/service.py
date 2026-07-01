@@ -4,7 +4,7 @@ from typing import Dict, Any, Optional
 from fraud_detector.models.event import LoginEvent
 from fraud_detector.algorithms import haversine_distance
 
-DEFAULT_PROFILES_DIR = Path("/home/dhruv/Documents/fraud-detector/data/processed/profiles")
+DEFAULT_PROFILES_DIR = Path("/home/dhruv/Documents/fraud-detector/fraud_detector/data/processed/profiles")
 
 class InferenceService:
     """Encapsulates spatial profile loading and centroid evaluation (predict)."""

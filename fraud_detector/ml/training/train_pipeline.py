@@ -23,8 +23,8 @@ from fraud_detector.ml.datasets.splitting import get_rolling_train_window
 from fraud_detector.ml.features.geo_features import torch_haversine_matrix, to_radians, haversine_distance_numpy
 
 # Configuration
-DEFAULT_CLEAN_LOGINS_PATH = Path("/home/dhruv/Documents/fraud-detector/data/processed/clean_logins.csv")
-DEFAULT_PROFILES_DIR = Path("/home/dhruv/Documents/fraud-detector/data/processed/profiles")
+DEFAULT_CLEAN_LOGINS_PATH = Path("/home/dhruv/Documents/fraud-detector/fraud_detector/data/processed/clean_logins.csv")
+DEFAULT_PROFILES_DIR = Path("/home/dhruv/Documents/fraud-detector/fraud_detector/data/processed/profiles")
 
 def calculate_geographic_centroid(latitudes_deg, longitudes_deg):
     """Calculates the geographic center (centroid) of a set of coordinates.

@@ -12,9 +12,9 @@ import pandas as pd
 # Ensure project root is in the path
 sys.path.append(str(Path(__file__).parent.parent))
 
-from training.train_pipeline import DEFAULT_CLEAN_LOGINS_PATH
-from training.retrain import check_and_trigger_retrain
-from scripts.run_worker import retrain_user_model_task
+from fraud_detector.ml.training.train_pipeline import DEFAULT_CLEAN_LOGINS_PATH
+from fraud_detector.ml.training.retrain import check_and_trigger_retrain
+from fraud_detector.scripts.run_worker import retrain_user_model_task
 
 def retrain_all_users(async_mode: bool = False):
     """Triggers retraining for all users with sufficient historical logins."""

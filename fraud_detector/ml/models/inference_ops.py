@@ -10,7 +10,7 @@ from typing import Dict, Any, Optional
 
 from fraud_detector.ml.features.geo_features import haversine_distance_numpy
 
-DEFAULT_PROFILES_DIR = Path("/home/dhruv/Documents/fraud-detector/data/processed/profiles")
+DEFAULT_PROFILES_DIR = Path("/home/dhruv/Documents/fraud-detector/fraud_detector/data/processed/profiles")
 
 def load_user_profile(user_id: str, profiles_dir: Path = DEFAULT_PROFILES_DIR) -> Optional[Dict[str, Any]]:
     """Loads the precomputed spatial profile JSON for a specific user.

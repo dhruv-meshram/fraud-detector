@@ -10,18 +10,18 @@ Generated automatically after running the external black-box validation suite.
 * **Passed**: 25
 * **Failed**: 0
 * **Skipped**: 0
-* **Total Time**: 0.6276 seconds
+* **Total Time**: 0.6339 seconds
 * **Status**: ✅ PASSED
 
 ---
 
 ## ⚡ Latency & Throughput (In-Memory Setup)
 
-* **Average Latency**: 0.0053 ms
-* **p50 (Median)**: 0.0049 ms
-* **p95**: 0.0066 ms
-* **p99**: 0.0087 ms
-* **Throughput**: 189255.12 rps
+* **Average Latency**: 0.0055 ms
+* **p50 (Median)**: 0.0044 ms
+* **p95**: 0.011 ms
+* **p99**: 0.0169 ms
+* **Throughput**: 182123.85 rps
 
 ---
 
@@ -29,6 +29,6 @@ Generated automatically after running the external black-box validation suite.
 
 | Batch Size | Elapsed Time (s) | Throughput (eps) | Avg Latency (ms) |
 | :--- | :--- | :--- | :--- |
-| 100 | 0.0005 | 207969.82 | 0.0048 |
-| 1000 | 0.0048 | 209673.14 | 0.0048 |
-| 10000 | 0.1093 | 91506.14 | 0.0109 |
+| 100 | 0.0005 | 217998.86 | 0.0046 |
+| 1000 | 0.0052 | 192555.68 | 0.0052 |
+| 10000 | 0.0916 | 109112.17 | 0.0092 |
