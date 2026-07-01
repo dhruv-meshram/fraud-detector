@@ -8,7 +8,7 @@ This document serves as the comprehensive user and developer guide for the Shiel
 
 ShieldFlow is a context-aware, low-latency login anomaly and fraud detection engine designed to identify credentials misuse, session hijacking, and impossible-travel anomalies. 
 
-The codebase was originally a monolith tied directly to standard FastAPI endpoints, PostgreSQL databases, Redis cache servers, and Kafka clusters. It has been refactored into a **reusable Python SDK package (`prj`)** that decouples the engine's core logic from infrastructure. Using the **Adapter Pattern**, external consumers can inject custom database, cache, profile, and queue brokers to execute fraud checks in any environment.
+The codebase was originally a monolith tied directly to standard FastAPI endpoints, PostgreSQL databases, Redis cache servers, and Kafka clusters. It has been refactored into a **reusable Python SDK package (`fraud_detector`)** that decouples the engine's core logic from infrastructure. Using the **Adapter Pattern**, external consumers can inject custom database, cache, profile, and queue brokers to execute fraud checks in any environment.
 
 ---
 
@@ -30,7 +30,7 @@ Executed asynchronously in the background:
 3. **Profile Generation**: Saves centroids and allowed radii as JSON profiles for the Fast Path.
 
 ### 2.3 Adapter-Driven Design
-All state reads and writes are managed through abstract base interfaces defined in `prj/adapters/base.py`:
+All state reads and writes are managed through abstract base interfaces defined in `fraud_detector/adapters/base.py`:
 *   `BaseProfileStore`: Retrieves spatial profiles.
 *   `BaseCacheStore`: Caches real-time session coordinates.
 *   `BaseDBStore`: Persists login audit events.
@@ -41,41 +41,44 @@ All state reads and writes are managed through abstract base interfaces defined 
 ## 📂 3. Directory Layout
 
 ```directory
-├── prj/                       # Reusable SDK Core Package
-│   ├── __init__.py            # Main SDK namespace exports
-│   ├── engine/                # Pipeline orchestrators
-│   │   ├── detector.py        # FraudDetector public API
-│   │   └── pipeline.py        # Core processing logic
-│   ├── models/                # Pydantic v2 domain schemas
-│   ├── algorithms/            # Pure stateless mathematical utilities
+├── fraud_detector/           # Reusable SDK Core Package
+│   ├── __init__.py           # Main SDK namespace exports
+│   ├── engine/               # Pipeline orchestrators
+│   │   ├── detector.py       # FraudDetector public API
+│   │   └── pipeline.py       # Core processing logic
+│   ├── models/               # Pydantic v2 domain schemas
+│   ├── algorithms/           # Pure stateless mathematical utilities
 │   │   ├── spatial/           # Haversine distance & velocity math
 │   │   └── ranking/           # Multi-factor score calculator
-│   ├── ml/                    # DBSCAN inference classifier
-│   └── adapters/              # Abstract & concrete storage engines
-├── app/                       # FastAPI presentation layer
-├── ml/                        # Background ML training & data generation pipelines
-├── lib-tests/                 # External black-box library validation suite
-├── tests/                     # Internal package unit/integration tests
-├── pyproject.toml             # Packaging metadata
-└── documentation.md           # This comprehensive guide
+│   ├── ml/                   # DBSCAN ML training & inference pipeline
+│   ├── adapters/             # Infrastructure adapters (Redis, Postgres, Kafka, In-Memory)
+│   ├── configs/              # Deployment resource configuration files
+│   ├── deployment/           # Worker Dockerfile and compose definitions
+│   ├── data/                 # Raw/processed/external datasets & cache
+│   └── scripts/              # CLI scripts and utilities
+├── tests/                    # Internal SDK unit and integration test suite
+├── benchmarks/               # Performance and load benchmarking suite
+├── lib-tests/                # External verification and validation test suite
+├── pyproject.toml            # Package metadata & build configuration
+└── README.md                 # Project README
 ```
 
 ---
 
 ## 💡 4. Public SDK Interface Reference
 
-### 4.1 Exposed Entry Points (`prj`)
+### 4.1 Exposed Entry Points (`fraud_detector`)
 You can import the core orchestrator, standard models, and custom stores directly from the package root:
 ```python
-from prj import FraudDetector, LoginEvent, FraudResult
+from fraud_detector import FraudDetector, LoginEvent, FraudResult
 ```
 
 ### 4.2 Initializing the Detector
 The constructor accepts customizable storage adapter overrides. If left empty, default adapters are instantiated.
 
 ```python
-from prj import FraudDetector
-from prj.adapters import (
+from fraud_detector import FraudDetector
+from fraud_detector.adapters import (
     InMemoryProfileStore,
     InMemoryCacheStore,
     InMemoryDBStore,
@@ -141,33 +144,23 @@ pip install -e .
 ### Step 1: Generate Synthetic Dataset
 Stream chronological mock events (75,000 logins over 1,000 users):
 ```bash
-python ml/datasets/synthetic_generator.py
+python fraud_detector/ml/datasets/synthetic_generator.py
 ```
-*Output:* `data/raw/synthetic_logins.csv`
+*Output:* `fraud_detector/data/raw/synthetic_logins.csv`
 
 ### Step 2: Clean & Preprocess Data
 Sanitize coordinate dropouts, apply 10s window deduplication, and filter outlier inputs:
 ```bash
-python ml/preprocessing/run_pipeline.py
+python fraud_detector/ml/preprocessing/run_pipeline.py
 ```
-*Output:* `data/processed/clean_logins.csv`
+*Output:* `fraud_detector/data/processed/clean_logins.csv`
 
 ### Step 3: Run Model Training & Profile Retraining
 Process the preprocessed records and generate DBSCAN cluster profiles for all users:
 ```bash
-python ml/training/train_pipeline.py
+python fraud_detector/ml/training/train_pipeline.py
 ```
-*Output:* User JSON profiles generated in `data/processed/profiles/`
-
-### Step 4: Run the FastAPI Server
-Serve the app locally:
-```bash
-uvicorn app.main:app --reload --port 8000
-```
-API Endpoints:
-*   `POST /analyze`: Standard SDK interface wrapper endpoint.
-*   `POST /evaluate_risk`: Legacy API wrapper handler.
-*   `POST /verify_anomaly`: Commits MFA-cleared logins to database and back-hydrates the cache.
+*Output:* User JSON profiles generated in `fraud_detector/data/processed/profiles/`
 
 ---
 

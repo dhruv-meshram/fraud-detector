@@ -2,7 +2,7 @@
 
 ShieldFlow is a context-aware, low-latency login anomaly and fraud detection engine designed to identify credentials misuse, session hijacking, and impossible-travel events.
 
-It has been redesigned as a **fully decoupled, reusable Python SDK (`prj`)** that can be integrated into external applications, with customizable storage, cache, database, and broker adapters.
+It is structured as a **fully decoupled, reusable Python SDK (`fraud_detector`)** that can be integrated into external applications, with customizable storage, cache, database, and broker adapters.
 
 ---
 
@@ -17,7 +17,7 @@ ShieldFlow partitions its detection logic into two paths:
 
 ### Adapter Pattern Integration
 
-The SDK is decoupled from infrastructure via abstract base classes in `prj/adapters/base.py`. Developers can plug in their own storage engines:
+The SDK is decoupled from infrastructure via abstract base classes in `fraud_detector/adapters/base.py`. Developers can plug in their own storage engines:
 
 - **Profile Store (`BaseProfileStore`)**: Retrieves user spatial boundary profiles.
   - *Production*: `PostgreSQLProfileStore` (hydrates from Redis or reads from filesystem fallback).
@@ -37,18 +37,24 @@ The SDK is decoupled from infrastructure via abstract base classes in `prj/adapt
 ## 📦 Package Structure
 
 ```directory
-├── prj/                       # Core SDK Package
-│   ├── __init__.py            # Exposes FraudDetector public interface
-│   ├── engine/                # Core pipeline orchestration
-│   │   ├── detector.py        # FraudDetector orchestrator
-│   │   └── pipeline.py        # DetectionPipeline
-│   ├── models/                # Pydantic v2 domain schemas (LoginEvent, FraudResult)
-│   ├── algorithms/            # Stateless mathematical algorithms (Haversine, Graph velocity)
-│   ├── ml/                    # DBSCAN ML inference loader
-│   └── adapters/              # Infrastructure adapters (Redis, Postgres, Kafka, In-Memory)
-├── app/                       # FastAPI controller layer (consumes SDK)
-├── tests/                     # Unit and Integration test suite
-├── pyproject.toml             # Python packaging configuration
+├── fraud_detector/           # Core SDK Package
+│   ├── __init__.py           # Exposes FraudDetector public interface
+│   ├── engine/               # Core pipeline orchestration
+│   │   ├── detector.py       # FraudDetector orchestrator
+│   │   └── pipeline.py       # DetectionPipeline
+│   ├── models/               # Pydantic v2 domain schemas (LoginEvent, FraudResult)
+│   ├── algorithms/           # Stateless mathematical algorithms (Haversine, Graph velocity)
+│   ├── ml/                   # DBSCAN ML training & inference pipeline
+│   ├── adapters/             # Infrastructure adapters (Redis, Postgres, Kafka, In-Memory)
+│   ├── configs/              # Deployment resource configuration files
+│   ├── deployment/           # Worker Dockerfile and compose definitions
+│   ├── data/                 # Raw/processed/external datasets & cache
+│   └── scripts/              # CLI scripts and utilities
+├── tests/                    # Internal SDK unit and integration test suite
+├── benchmarks/               # Performance and load benchmarking suite
+├── lib-tests/                # External verification and validation test suite
+├── pyproject.toml            # Package metadata & build configuration
+└── README.md                 # Project README
 ```
 
 ---
@@ -74,8 +80,8 @@ pip install git+https://github.com/your-org/fraud-detector.git
 Perfect for CI/CD pipelines, local testing, or serverless environments where Redis/Postgres/Kafka are not available.
 
 ```python
-from prj import FraudDetector
-from prj.adapters import (
+from fraud_detector import FraudDetector
+from fraud_detector.adapters import (
     InMemoryProfileStore,
     InMemoryCacheStore,
     InMemoryDBStore,
@@ -117,8 +123,8 @@ print(result.is_fraudulent) # True
 ### 2. Production Setup (Redis, PostgreSQL, Kafka)
 
 ```python
-from prj import FraudDetector
-from prj.adapters import (
+from fraud_detector import FraudDetector
+from fraud_detector.adapters import (
     PostgreSQLProfileStore,
     RedisCacheStore,
     PostgresDBStore,
@@ -163,5 +169,5 @@ This validation generates test summaries and performance metrics in the `lib-tes
 ---
 
 ## 📖 Complete Documentation
-For full setup instructions, model schemas, background ML pipeline details, and web server configurations, refer to the [documentation.md](documentation.md) file in the root of this project.
+For full setup instructions, model schemas, background ML pipeline details, and configurations, refer to the [documentation.md](documentation.md) file in the root of this project.
 
