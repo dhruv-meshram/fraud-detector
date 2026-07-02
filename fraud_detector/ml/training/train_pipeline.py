@@ -132,36 +132,63 @@ def train_user_model(
     return profile
 
 def run_training_pipeline(
-    input_file: str, 
-    profiles_dir: str, 
+    input_file: str = None, 
+    profiles_dir: str = None, 
     user_id: str = None,
     eps_km: float = 2.5,
-    min_samples: int = 3
+    min_samples: int = 3,
+    db_store = None,
+    profile_store = None
 ):
-    input_path = Path(input_file)
-    output_dir = Path(profiles_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
+    from fraud_detector.adapters.db import PostgresDBStore
+    from fraud_detector.adapters.profile import PostgreSQLProfileStore
     
-    if not input_path.exists():
-        raise FileNotFoundError(f"Clean preprocessed dataset not found at: {input_path}")
+    if db_store is None:
+        db_store = PostgresDBStore()
+    if profile_store is None:
+        profile_store = PostgreSQLProfileStore()
         
-    print(f"Loading clean logins from: {input_path}...")
-    df = pd.read_csv(input_path)
-    
-    # Determine which users to train
-    if user_id:
-        users = [user_id]
-        print(f"Training spatial profile for user: {user_id}")
+    use_db = False
+    try:
+        if user_id:
+            users = [user_id]
+        else:
+            users = db_store.get_all_users()
+        if users:
+            use_db = True
+    except Exception:
+        use_db = False
+        
+    if use_db:
+        print(f"Loading user list and login history from database...")
     else:
-        users = df['user_id'].unique()
-        print(f"Training spatial profiles for all {len(users)} users in dataset...")
+        if not input_file:
+            input_file = str(DEFAULT_CLEAN_LOGINS_PATH)
+        input_path = Path(input_file)
+        if not input_path.exists():
+            raise FileNotFoundError(f"Clean preprocessed dataset not found at: {input_path}")
+            
+        print(f"Loading clean logins from: {input_path}...")
+        df = pd.read_csv(input_path)
+        if user_id:
+            users = [user_id]
+        else:
+            users = df['user_id'].unique()
         
     trained_count = 0
     skipped_count = 0
     
     for i, curr_user in enumerate(users):
-        user_logins = df[df['user_id'] == curr_user]
-        
+        if use_db:
+            history_list = db_store.get_user_history(curr_user)
+            user_logins = pd.DataFrame(history_list)
+        else:
+            user_logins = df[df['user_id'] == curr_user]
+            
+        if user_logins.empty:
+            skipped_count += 1
+            continue
+            
         # Train model
         profile = train_user_model(
             curr_user, 
@@ -172,9 +199,7 @@ def run_training_pipeline(
         
         # Persist checkpoint if training occurred
         if profile["total_logins_trained"] >= min_samples:
-            profile_path = output_dir / f"{curr_user}.json"
-            with open(profile_path, "w") as f:
-                json.dump(profile, f, indent=2)
+            profile_store.save_profile(curr_user, profile)
             trained_count += 1
         else:
             skipped_count += 1

@@ -6,27 +6,18 @@ from fraud_detector.algorithms import haversine_distance
 
 DEFAULT_PROFILES_DIR = Path("/home/dhruv/Documents/fraud-detector/fraud_detector/data/processed/profiles")
 
+from fraud_detector.adapters.profile import PostgreSQLProfileStore
+
 class InferenceService:
     """Encapsulates spatial profile loading and centroid evaluation (predict)."""
     
-    def __init__(self, profiles_dir: Optional[Path] = None, profile_store = None):
+    def __init__(self, profiles_dir: Optional[Path] = None, profile_store = None, db_engine_or_conn = None):
         self.profiles_dir = Path(profiles_dir) if profiles_dir else DEFAULT_PROFILES_DIR
-        self.profile_store = profile_store
+        self.profile_store = profile_store or PostgreSQLProfileStore(db_engine_or_conn=db_engine_or_conn)
 
     def load_profile(self, user_id: str) -> Optional[Dict[str, Any]]:
         """Loads precomputed spatial profile for a user."""
-        if self.profile_store:
-            return self.profile_store.get_profile(user_id)
-            
-        profile_path = self.profiles_dir / f"{user_id}.json"
-        if not profile_path.exists():
-            return None
-        try:
-            with open(profile_path, "r") as f:
-                return json.load(f)
-        except Exception as e:
-            print(f"Error loading profile for {user_id}: {e}")
-            return None
+        return self.profile_store.get_profile(user_id)
 
     def predict(self, event: LoginEvent) -> Dict[str, Any]:
         """Evaluates whether an incoming login event coordinate matches the user's spatial baseline.

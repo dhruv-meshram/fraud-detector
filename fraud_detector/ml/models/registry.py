@@ -13,6 +13,8 @@ import redis
 DEFAULT_PROFILES_DIR = Path("/home/dhruv/Documents/fraud-detector/fraud_detector/data/processed/profiles")
 
 
+from fraud_detector.adapters.profile import PostgreSQLProfileStore
+
 class ModelRegistry:
     """Unified Model Registry for ShieldFlow user micro-models."""
     
@@ -21,10 +23,12 @@ class ModelRegistry:
         redis_host: str = "localhost", 
         redis_port: int = 6379, 
         redis_db: int = 0,
-        profiles_dir: Path = DEFAULT_PROFILES_DIR
+        profiles_dir: Path = DEFAULT_PROFILES_DIR,
+        db_engine_or_conn = None,
+        profile_store = None
     ):
         self.profiles_dir = Path(profiles_dir)
-        self.profiles_dir.mkdir(parents=True, exist_ok=True)
+        self.profile_store = profile_store or PostgreSQLProfileStore(db_engine_or_conn=db_engine_or_conn)
         
         # Initialize connection lazily
         self.redis_url = f"redis://{redis_host}:{redis_port}/{redis_db}"
@@ -39,32 +43,26 @@ class ModelRegistry:
                 # Test connection
                 self._redis_client.ping()
             except Exception:
-                # Fallback to local storage if Redis is down or unavailable
+                # Fallback if Redis is down or unavailable
                 self._redis_client = None
         return self._redis_client
 
     def register_profile(self, user_id: str, profile: Dict[str, Any]) -> bool:
-        """Registers a user profile to the local disk and hydrates the Redis cache.
+        """Registers a user profile to the SQL database and hydrates the Redis cache.
         
         Returns:
             Boolean indicating successful caching/registration.
         """
-        profile_json = json.dumps(profile)
-        
-        # 1. Persistent backup (file system fallback / simulating PostgreSQL write)
-        local_path = self.profiles_dir / f"{user_id}.json"
-        try:
-            with open(local_path, "w") as f:
-                f.write(profile_json)
-        except Exception as e:
-            print(f"[REGISTRY ERROR] Failed to save persistent backup for {user_id}: {e}")
+        # 1. Persistent backup using PostgreSQLProfileStore
+        success = self.profile_store.save_profile(user_id, profile)
+        if not success:
             return False
             
         # 2. Redis Live Registry Hydration (zero downtime overwrite)
         r = self.redis_client
         if r:
             try:
-                r.set(f"user:profile:{user_id}", profile_json)
+                r.set(f"user:profile:{user_id}", json.dumps(profile))
                 return True
             except Exception as e:
                 print(f"[REGISTRY WARNING] Failed to cache profile for {user_id} in Redis: {e}")
@@ -72,7 +70,7 @@ class ModelRegistry:
         return True
 
     def get_profile(self, user_id: str) -> Optional[Dict[str, Any]]:
-        """Retrieves a user profile, check Redis first, falling back to disk and auto-hydrating.
+        """Retrieves a user profile, check Redis first, falling back to SQL and auto-hydrating.
         
         Returns:
             Dictionary profile if found, otherwise None.
@@ -89,22 +87,15 @@ class ModelRegistry:
             except Exception as e:
                 print(f"[REGISTRY WARNING] Failed to fetch {user_id} from Redis: {e}")
                 
-        # 2. Cache Miss: Fallback to persistent backup
-        local_path = self.profiles_dir / f"{user_id}.json"
-        if local_path.exists():
-            try:
-                with open(local_path, "r") as f:
-                    profile = json.load(f)
-                
-                # Auto-hydrate Redis cache on miss
-                if r:
-                    try:
-                        r.set(redis_key, json.dumps(profile))
-                    except Exception:
-                        pass
-                        
-                return profile
-            except Exception as e:
-                print(f"[REGISTRY ERROR] Failed to load backup for {user_id}: {e}")
+        # 2. Cache Miss: Fallback to persistent backup database store
+        profile = self.profile_store.get_profile(user_id)
+        if profile:
+            # Auto-hydrate Redis cache on miss
+            if r:
+                try:
+                    r.set(redis_key, json.dumps(profile))
+                except Exception:
+                    pass
+            return profile
                 
         return None

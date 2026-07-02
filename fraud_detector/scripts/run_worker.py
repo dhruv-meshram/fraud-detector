@@ -49,17 +49,18 @@ def retrain_user_model_task(user_id: str) -> bool:
         Boolean indicating task success.
     """
     print(f"[WORKER] Starting asynchronous retraining for user {user_id}...")
+    from fraud_detector.adapters.db import PostgresDBStore
     
-    clean_logins_path = Path(DEFAULT_CLEAN_LOGINS_PATH)
-    if not clean_logins_path.exists():
-        print(f"[WORKER ERROR] Clean logins database {clean_logins_path} does not exist.")
-        return False
-        
+    db_store = PostgresDBStore()
+    
     try:
-        # 1. Load user logs
-        df = pd.read_csv(clean_logins_path)
-        user_df = df[df['user_id'] == user_id]
-        
+        # 1. Load user logs from DB
+        history = db_store.get_user_history(user_id)
+        if not history:
+            print(f"[WORKER WARNING] User {user_id} has no login history in DB.")
+            return False
+            
+        user_df = pd.DataFrame(history)
         if len(user_df) < 10:
             print(f"[WORKER WARNING] User {user_id} has {len(user_df)} logins. Bypassing training due to sparse data.")
             return False
@@ -67,7 +68,7 @@ def retrain_user_model_task(user_id: str) -> bool:
         # 2. Re-train micro-model
         profile = train_user_model(user_id, user_df)
         
-        # 3. Save profile to registry (updates file & Redis)
+        # 3. Save profile to registry (updates SQL DB & Redis)
         registry = ModelRegistry()
         success = registry.register_profile(user_id, profile)
         

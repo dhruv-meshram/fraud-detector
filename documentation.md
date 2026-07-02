@@ -67,51 +67,74 @@ All state reads and writes are managed through abstract base interfaces defined 
 
 ## 💡 4. Public SDK Interface Reference
 
-### 4.1 Exposed Entry Points (`fraud_detector`)
-You can import the core orchestrator, standard models, and custom stores directly from the package root:
-```python
-from fraud_detector import FraudDetector, LoginEvent, FraudResult
+### 4.1 Geolocation Responsibility Policy
+The ShieldFlow SDK is **completely independent of any external geolocation database or service** (such as MaxMind, GeoLite, IPinfo, or ipapi). 
+
+* **Caller Responsibility**: The host application must resolve the client's IP address to geographic coordinates (`latitude` and `longitude`) using its preferred geolocation provider before invoking the SDK.
+* **Coordinate Requirements**: The SDK expects valid geographic coordinates. Input coordinates are validated strictly:
+  * `latitude` must be a float/int between `-90.0` and `90.0`.
+  * `longitude` must be a float/int between `-180.0` and `180.0`.
+  * Invalid coordinate values or types will immediately raise a `ValueError`.
+
+#### Example Workflow:
+```text
+User Login
+    ↓
+Host Application
+    ↓
+Resolve IP → Coordinates (using any geolocation provider)
+    ↓
+Call fraud_detector.check_fraud SDK
+    ↓
+SDK stores event (with original IP & resolved coordinates)
+    ↓
+SDK runs spatial fraud detection algorithms
+    ↓
+SDK returns fraud score (0 to 1)
 ```
 
-### 4.2 Initializing the Detector
-The constructor accepts customizable storage adapter overrides. If left empty, default adapters are instantiated.
+### 4.2 Exposed Entry Points (`fraud_detector`)
+You can import the main validation function directly from the package root:
+```python
+from fraud_detector import check_fraud, FraudDetector
+```
 
+### 4.3 Public API: `check_fraud`
+```python
+def check_fraud(
+    db_conn = None,
+    user_id: str = None,
+    device_fingerprint: str = None,
+    ip_address: str = "unknown",
+    latitude: Optional[float] = None,
+    longitude: Optional[float] = None,
+    event: Optional[Dict[str, Any]] = None
+) -> float:
+```
+* **Parameters**:
+  * `db_conn`: SQLAlchemy database connection or engine (defaults to an in-memory SQLite database).
+  * `user_id`: Unique identifier for the user.
+  * `device_fingerprint`: Client device hash fingerprint.
+  * `ip_address`: Original client IP address (stored for auditing and logs).
+  * `latitude`: Decimal latitude of the request.
+  * `longitude`: Decimal longitude of the request.
+  * `event`: Optional dict containing metadata (such as `timestamp`).
+* **Returns**:
+  * `fraud_score`: A float between `0.0` (legitimate) and `1.0` (high risk).
+
+### 4.4 Model Schemas
+If using the object-oriented API directly:
 ```python
 from fraud_detector import FraudDetector
-from fraud_detector.adapters import (
-    InMemoryProfileStore,
-    InMemoryCacheStore,
-    InMemoryDBStore,
-    ConsoleAlertProducer
-)
+from fraud_detector.models.event import LoginEvent
 
-# Headless / Testing Configuration
-detector = FraudDetector(
-    profile_store=InMemoryProfileStore(),
-    cache_store=InMemoryCacheStore(),
-    db_store=InMemoryDBStore(),
-    alert_producer=ConsoleAlertProducer()
-)
-```
-
-### 4.3 Input Model: `LoginEvent`
-```python
+# Direct LoginEvent definition
 class LoginEvent(BaseModel):
     user_id: str
     latitude: float
     longitude: float
     timestamp: float
     device_hash: str
-```
-
-### 4.4 Output Model: `FraudResult`
-```python
-class FraudResult(BaseModel):
-    risk_score: float         # Risk percentage (0.0 to 100.0)
-    is_fraudulent: bool       # Final verdict threshold flag
-    reasons: List[str]        # Plain-text reasons
-    status: str               # Status code: KNOWN_ZONE, OUTLIER, IMPOSSIBLE_VELOCITY, COLD_START_BYPASS
-    details: RiskBreakdown
 ```
 
 ---

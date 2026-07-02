@@ -19,30 +19,36 @@ def run_time_driven_cron(
     profiles_dir: Path = DEFAULT_PROFILES_DIR,
     clean_logins_path: Path = DEFAULT_CLEAN_LOGINS_PATH,
     force_all: bool = False,
-    age_days: int = 30
+    age_days: int = 30,
+    db_store = None,
+    profile_store = None
 ):
     """Time-driven cron job that triggers a pruning and retraining cycle for obsolete locations."""
+    from fraud_detector.adapters.db import PostgresDBStore
+    from fraud_detector.adapters.profile import PostgreSQLProfileStore
+    
+    if db_store is None:
+        db_store = PostgresDBStore()
+    if profile_store is None:
+        profile_store = PostgreSQLProfileStore()
+        
     print("Starting time-driven cron retraining cycle...")
-    if not profiles_dir.exists():
-        print(f"Profiles directory {profiles_dir} does not exist. No profiles to update.")
+    
+    try:
+        users = db_store.get_all_users()
+    except Exception as e:
+        print(f"Error fetching users from DB: {e}")
         return
         
-    if not clean_logins_path.exists():
-        print(f"Clean logins file {clean_logins_path} does not exist.")
-        return
-
-    df = pd.read_csv(clean_logins_path)
     now = datetime.now(timezone.utc)
-    
     retrained_count = 0
     skipped_count = 0
     
-    for profile_file in profiles_dir.glob("*.json"):
-        user_id = profile_file.stem
-        
+    for user_id in users:
         try:
-            with open(profile_file, "r") as f:
-                profile = json.load(f)
+            profile = profile_store.get_profile(user_id)
+            if not profile:
+                continue
                 
             last_updated_str = profile.get("last_updated")
             if not last_updated_str:
@@ -55,13 +61,13 @@ def run_time_driven_cron(
                 age_days_actual = age.days
                 
             if should_update:
-                user_df = df[df['user_id'] == user_id]
+                history_list = db_store.get_user_history(user_id)
+                user_df = pd.DataFrame(history_list)
                 verified_history = user_df[user_df['is_verified'].astype(int) == 1]
                 if len(verified_history) >= 10:
                     print(f"Retraining user {user_id} (profile age: {age_days_actual} days)...")
                     new_profile = train_user_model(user_id, user_df)
-                    with open(profile_file, "w") as f:
-                        json.dump(new_profile, f, indent=2)
+                    profile_store.save_profile(user_id, new_profile)
                     retrained_count += 1
                 else:
                     skipped_count += 1
@@ -79,7 +85,9 @@ def check_and_trigger_retrain(
     new_login_ts: float,
     new_login_device: str,
     clean_logins_path: Path = DEFAULT_CLEAN_LOGINS_PATH,
-    profiles_dir: Path = DEFAULT_PROFILES_DIR
+    profiles_dir: Path = DEFAULT_PROFILES_DIR,
+    db_store = None,
+    profile_store = None
 ) -> dict:
     """Orchestrates cold start, boundary evaluation, and retraining triggers for a login.
     
@@ -88,23 +96,31 @@ def check_and_trigger_retrain(
         new_login_lat, new_login_lon: Coordinates.
         new_login_ts: UNIX timestamp.
         new_login_device: Device hash.
-        clean_logins_path: Path to database clean_logins.csv.
-        profiles_dir: Profiles directory.
+        clean_logins_path: Unused path.
+        profiles_dir: Unused path.
+        db_store: DB store.
+        profile_store: Profile store.
         
     Returns:
         Evaluation status dict: {'status': ..., 'risk': ..., 'action': ...}
     """
-    # 1. Load user's clean verified history
-    if not clean_logins_path.exists():
-        # Fallback to cold start if clean logins file doesn't exist
+    from fraud_detector.adapters.db import PostgresDBStore
+    from fraud_detector.adapters.profile import PostgreSQLProfileStore
+    
+    if db_store is None:
+        db_store = PostgresDBStore()
+    if profile_store is None:
+        profile_store = PostgreSQLProfileStore()
+        
+    history_list = db_store.get_user_history(user_id)
+    if not history_list:
         return {
             "status": "NO_HISTORY_DB",
             "risk": "LOW_RISK",
             "action": "BYPASS_ML_COLD_START"
         }
         
-    df = pd.read_csv(clean_logins_path)
-    user_history = df[df['user_id'] == user_id].sort_values(by='timestamp')
+    user_history = pd.DataFrame(history_list).sort_values(by='timestamp')
     verified_history = user_history[user_history['is_verified'].astype(int) == 1]
     
     num_verified = len(verified_history)
@@ -118,7 +134,6 @@ def check_and_trigger_retrain(
                 "action": "BYPASS_ML_RULE_FALLBACK"
             }
             
-        # Get last login for spatiotemporal velocity check
         last_login = verified_history.iloc[-1]
         last_lat = last_login['latitude']
         last_lon = last_login['longitude']
@@ -138,30 +153,22 @@ def check_and_trigger_retrain(
         }
         
     # --- ML PHASE (>= 10 logins) ---
-    profile_path = Path(profiles_dir) / f"{user_id}.json"
+    profile = profile_store.get_profile(user_id)
     
     # Transition check: if exactly 10 verified logins, trigger retraining
-    if num_verified == 10 and not profile_path.exists():
+    if num_verified == 10 and not profile:
         print(f"User {user_id} reached exactly 10 verified logins. Generating first spatial profile...")
         profile = train_user_model(user_id, user_history)
-        profiles_dir.mkdir(parents=True, exist_ok=True)
-        with open(profile_path, "w") as f:
-            json.dump(profile, f, indent=2)
-            
+        profile_store.save_profile(user_id, profile)
+        
     # Load profile and evaluate risk
-    evaluation = evaluate_login_location(user_id, new_login_lat, new_login_lon, profiles_dir)
+    evaluation = evaluate_login_location(user_id, new_login_lat, new_login_lon, profile_store=profile_store)
     
     # Retraining trigger condition: check if user has accumulated 5 new verified anomalies
-    # An anomaly is a verified login (is_verified == 1) that fell outside the known boundary (OUTLIER)
-    # when evaluated at inference time.
-    if profile_path.exists() and evaluation["status"] == "OUTLIER":
-        # Check how many recent verified logins have been outliers relative to the profile's clusters
-        with open(profile_path, "r") as f:
-            profile = json.load(f)
-            
+    if profile and evaluation["status"] == "OUTLIER":
         clusters = profile.get("clusters", [])
         
-        # Count verified history events that are outliers (distance > radius for all clusters)
+        # Count verified history events that are outliers
         outlier_anomalies_count = 0
         for _, hist_row in verified_history.tail(20).iterrows():
             h_lat = hist_row['latitude']
@@ -183,10 +190,9 @@ def check_and_trigger_retrain(
         if outlier_anomalies_count >= 5:
             print(f"User {user_id} has accumulated {outlier_anomalies_count} verified anomalies. Re-training DBSCAN model...")
             profile = train_user_model(user_id, user_history)
-            with open(profile_path, "w") as f:
-                json.dump(profile, f, indent=2)
+            profile_store.save_profile(user_id, profile)
             # Re-evaluate with the updated profile
-            evaluation = evaluate_login_location(user_id, new_login_lat, new_login_lon, profiles_dir)
+            evaluation = evaluate_login_location(user_id, new_login_lat, new_login_lon, profile_store=profile_store)
             evaluation["retrained"] = True
             
     return {

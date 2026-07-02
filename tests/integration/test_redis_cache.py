@@ -48,7 +48,15 @@ def test_atomic_profile_overwrite(mock_redis):
         user_id = "test_user_atomic_swap"
         initial_profile = {
             "user_id": user_id,
-            "clusters": [{"centroid_lat": 37.7749, "centroid_lon": -122.4194}]
+            "last_updated": "2026-07-02T09:00:00Z",
+            "total_logins_trained": 10,
+            "clusters": [{
+                "cluster_id": 0,
+                "centroid_lat": 37.7749,
+                "centroid_lon": -122.4194,
+                "dynamic_radius_km": 0.0,
+                "num_points": 1
+            }]
         }
         
         # Register initial profile
@@ -61,9 +69,23 @@ def test_atomic_profile_overwrite(mock_redis):
         # Overwrite with updated spatial centroids (e.g. after retraining)
         updated_profile = {
             "user_id": user_id,
+            "last_updated": "2026-07-02T09:05:00Z",
+            "total_logins_trained": 11,
             "clusters": [
-                {"centroid_lat": 37.7749, "centroid_lon": -122.4194},
-                {"centroid_lat": 34.0522, "centroid_lon": -118.2437}
+                {
+                    "cluster_id": 0,
+                    "centroid_lat": 37.7749,
+                    "centroid_lon": -122.4194,
+                    "dynamic_radius_km": 0.0,
+                    "num_points": 1
+                },
+                {
+                    "cluster_id": 1,
+                    "centroid_lat": 34.0522,
+                    "centroid_lon": -118.2437,
+                    "dynamic_radius_km": 0.0,
+                    "num_points": 1
+                }
             ]
         }
         assert registry.register_profile(user_id, updated_profile) is True
@@ -73,21 +95,27 @@ def test_atomic_profile_overwrite(mock_redis):
         assert cached_updated == updated_profile
         assert registry.get_profile(user_id) == updated_profile
 
-def test_cache_miss_hydration(mock_redis, tmp_path):
-    """Verifies cache-miss fallback reads from disk and hydrates Redis cache."""
+def test_cache_miss_hydration(mock_redis):
+    """Verifies cache-miss fallback reads from database and hydrates Redis cache."""
     with patch('redis.from_url', return_value=mock_redis):
-        registry = ModelRegistry(profiles_dir=tmp_path)
+        registry = ModelRegistry()
         
         user_id = "cache_miss_user"
         profile_data = {
             "user_id": user_id,
-            "clusters": [{"centroid_lat": 51.5074, "centroid_lon": -0.1278}]
+            "last_updated": "2026-07-02T09:00:00Z",
+            "total_logins_trained": 10,
+            "clusters": [{
+                "cluster_id": 0,
+                "centroid_lat": 51.5074,
+                "centroid_lon": -0.1278,
+                "dynamic_radius_km": 0.0,
+                "num_points": 1
+            }]
         }
         
-        # Save directly to disk to simulate cache eviction or server restart
-        local_file = tmp_path / f"{user_id}.json"
-        with open(local_file, "w") as f:
-            f.write(json.dumps(profile_data))
+        # Save directly to database to simulate cache eviction or server restart
+        registry.profile_store.save_profile(user_id, profile_data)
             
         # Ensure Redis cache has nothing
         assert mock_redis.get(f"user:profile:{user_id}") is None

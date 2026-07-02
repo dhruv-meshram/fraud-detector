@@ -18,17 +18,22 @@ from fraud_detector.scripts.run_worker import retrain_user_model_task
 
 def retrain_all_users(async_mode: bool = False):
     """Triggers retraining for all users with sufficient historical logins."""
-    clean_logins_path = Path(DEFAULT_CLEAN_LOGINS_PATH)
-    if not clean_logins_path.exists():
-        print(f"[ERROR] Clean logins database {clean_logins_path} does not exist.")
+    from fraud_detector.adapters.db import PostgresDBStore
+    
+    db_store = PostgresDBStore()
+    
+    try:
+        users = db_store.get_all_users()
+        active_users = []
+        for u in users:
+            history = db_store.get_user_history(u)
+            # Filter for users who can be trained (>= 10 logins)
+            if len(history) >= 10:
+                active_users.append(u)
+    except Exception as e:
+        print(f"[ERROR] Failed to query users from DB: {e}")
         return
         
-    df = pd.read_csv(clean_logins_path)
-    user_counts = df['user_id'].value_counts()
-    
-    # Filter for users who can be trained (>= 10 logins)
-    active_users = user_counts[user_counts >= 10].index.tolist()
-    
     print(f"Found {len(active_users)} active users with sufficient logins (>= 10) for training.")
     
     queued_count = 0
@@ -41,11 +46,7 @@ def retrain_all_users(async_mode: bool = False):
             queued_count += 1
         else:
             # Train synchronously
-            user_df = df[df['user_id'] == user_id]
-            # Use one of the user's logins to check retraining (simulating a login update check)
-            sample_login = user_df.iloc[-1]
             try:
-                # Force update by manually training
                 retrain_user_model_task(user_id)
                 success_count += 1
             except Exception as e:

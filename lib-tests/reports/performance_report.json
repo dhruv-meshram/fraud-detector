@@ -1,20 +1,20 @@
 {
   "batch_100": {
     "size": 100,
-    "elapsed_seconds": 0.0005,
-    "throughput_eps": 213583.03,
-    "average_latency_ms": 0.0047
+    "elapsed_seconds": 0.0004,
+    "throughput_eps": 230010.9,
+    "average_latency_ms": 0.0043
   },
   "batch_1000": {
     "size": 1000,
-    "elapsed_seconds": 0.0048,
-    "throughput_eps": 208037.75,
-    "average_latency_ms": 0.0048
+    "elapsed_seconds": 0.0046,
+    "throughput_eps": 216895.27,
+    "average_latency_ms": 0.0046
   },
   "batch_10000": {
     "size": 10000,
-    "elapsed_seconds": 0.1139,
-    "throughput_eps": 87773.46,
-    "average_latency_ms": 0.0114
+    "elapsed_seconds": 0.0475,
+    "throughput_eps": 210438.54,
+    "average_latency_ms": 0.0048
   }
 }

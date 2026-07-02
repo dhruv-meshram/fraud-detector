@@ -12,34 +12,30 @@ from fraud_detector.ml.features.geo_features import haversine_distance_numpy
 
 DEFAULT_PROFILES_DIR = Path("/home/dhruv/Documents/fraud-detector/fraud_detector/data/processed/profiles")
 
-def load_user_profile(user_id: str, profiles_dir: Path = DEFAULT_PROFILES_DIR) -> Optional[Dict[str, Any]]:
-    """Loads the precomputed spatial profile JSON for a specific user.
+from fraud_detector.adapters.profile import PostgreSQLProfileStore
+
+def load_user_profile(user_id: str, profiles_dir: Path = DEFAULT_PROFILES_DIR, profile_store=None) -> Optional[Dict[str, Any]]:
+    """Loads the precomputed spatial profile using the profile store.
     
     Args:
         user_id: The UUID/identifier of the user.
-        profiles_dir: The directory containing the user profile JSON files.
+        profiles_dir: Unused, kept for backwards compatibility.
+        profile_store: The profile store to load from (defaults to PostgreSQLProfileStore).
         
     Returns:
         Dictionary profile if found, otherwise None.
     """
-    profile_path = Path(profiles_dir) / f"{user_id}.json"
-    if not profile_path.exists():
-        return None
-        
-    try:
-        with open(profile_path, "r") as f:
-            return json.load(f)
-    except Exception as e:
-        # Log error or handle corruption
-        print(f"Error loading profile for {user_id}: {e}")
-        return None
+    if profile_store is None:
+        profile_store = PostgreSQLProfileStore()
+    return profile_store.get_profile(user_id)
 
 def evaluate_login_location(
     user_id: str, 
     lat: float, 
     lon: float, 
     profiles_dir: Path = DEFAULT_PROFILES_DIR,
-    buffer_km: float = 0.0
+    buffer_km: float = 0.0,
+    profile_store=None
 ) -> Dict[str, Any]:
     """Evaluates whether an incoming login coordinate is within the user's known spatial zones.
     
@@ -49,17 +45,14 @@ def evaluate_login_location(
         user_id: The UUID/identifier of the user.
         lat: Latitude of the incoming login (degrees).
         lon: Longitude of the incoming login (degrees).
-        profiles_dir: Path to directory containing precomputed profiles.
+        profiles_dir: Unused, kept for backwards compatibility.
         buffer_km: Additional runtime distance cushion to append to cluster radii.
+        profile_store: The profile store to load from.
         
     Returns:
-        A dictionary containing:
-            - 'status': 'KNOWN_ZONE', 'OUTLIER', or 'NO_PROFILE'
-            - 'closest_cluster_id': ID of the closest cluster (None if NO_PROFILE or no clusters)
-            - 'distance_km': Distance to the closest cluster centroid (None if NO_PROFILE)
-            - 'dynamic_radius_km': Radius of the closest cluster (None if NO_PROFILE)
+        A dictionary containing classification status.
     """
-    profile = load_user_profile(user_id, profiles_dir)
+    profile = load_user_profile(user_id, profiles_dir, profile_store=profile_store)
     
     if not profile or not profile.get("clusters"):
         return {

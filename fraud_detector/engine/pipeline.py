@@ -2,13 +2,13 @@ from fraud_detector.models.event import LoginEvent
 from fraud_detector.models.result import FraudResult, RiskBreakdown
 from fraud_detector.algorithms import validate_velocity, calculate_risk_score, haversine_distance, spatiotemporal_velocity
 from fraud_detector.ml.inference import InferenceService
-from fraud_detector.adapters import FileProfileStore, RedisCacheStore, PostgresDBStore, KafkaAlertProducer
+from fraud_detector.adapters import PostgreSQLProfileStore, RedisCacheStore, PostgresDBStore, KafkaAlertProducer
 
 class DetectionPipeline:
     """The orchestrating pipeline that sequentially applies validations, checks, ML inferences, and scores."""
     
     def __init__(self, profile_store=None, cache_store=None, db_store=None, alert_producer=None):
-        self.profile_store = profile_store or FileProfileStore()
+        self.profile_store = profile_store or PostgreSQLProfileStore()
         self.cache_store = cache_store or RedisCacheStore()
         self.db_store = db_store or PostgresDBStore()
         self.alert_producer = alert_producer or KafkaAlertProducer()
